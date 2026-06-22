@@ -81,7 +81,7 @@ export default function Produtos() {
   const totalPaginas = Math.ceil(total / 48);
 
   return (
-    <div className="h-full">
+    <div className="min-h-full">
       {/* Cabeçalho da página */}
       <div className="bg-white rounded-2xl px-6 py-4 mb-3 flex items-center justify-between">
         <div>
