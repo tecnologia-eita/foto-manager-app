@@ -13,4 +13,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Utilitários
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+
+  // Controles da janela (barra de título customizada)
+  window: {
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize'),
+    close: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+    onMaximizeChange: (cb) => {
+      const handler = (_e, val) => cb(val);
+      ipcRenderer.on('window:maximized', handler);
+      return () => ipcRenderer.removeListener('window:maximized', handler);
+    },
+  },
 });

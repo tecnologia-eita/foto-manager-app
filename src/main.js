@@ -14,6 +14,8 @@ function createWindow() {
     minHeight: 700,
     title: 'Foto Manager — Eita Casa Perfeita',
     icon: path.join(__dirname, '../assets/icon.ico'),
+    frame: false,                 // sem moldura nativa — barra de título própria no app
+    backgroundColor: '#f3f4f6',   // gray-100, evita flash branco na abertura
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -21,6 +23,10 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+
+  // Avisa o renderer quando o estado de maximização muda (atualiza o ícone do botão)
+  mainWindow.on('maximize', () => mainWindow.webContents.send('window:maximized', true));
+  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window:maximized', false));
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5200');
@@ -111,3 +117,14 @@ ipcMain.handle('shell:openExternal', (event, url) => {
   const { shell } = require('electron');
   shell.openExternal(url);
 });
+
+// IPC: Controles de janela (barra de título customizada)
+ipcMain.handle('window:minimize', () => mainWindow?.minimize());
+ipcMain.handle('window:toggleMaximize', () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
+  return mainWindow.isMaximized();
+});
+ipcMain.handle('window:close', () => mainWindow?.close());
+ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
