@@ -60,7 +60,7 @@ export default function Produtos() {
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const data = await api.getProdutos({ busca, pagina, limite: 50 });
+      const data = await api.getProdutos({ busca, pagina, limite: 48 });
       setProdutos(data.produtos);
       setTotal(data.total);
       if (data.total_variacoes) setTotalVariacoes(data.total_variacoes);
@@ -75,7 +75,7 @@ export default function Produtos() {
   useEffect(() => { if (lastSync) carregar(); }, [lastSync]);
   useEffect(() => { api.getStatusSync().then(setStatusSync).catch(() => {}); }, [lastSync]);
 
-  const totalPaginas = Math.ceil(total / 50);
+  const totalPaginas = Math.ceil(total / 48);
 
   return (
     <div className="h-full">
