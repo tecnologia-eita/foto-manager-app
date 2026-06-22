@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../components/AuthContext';
+import logo from '../assets/icone-branco.svg';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -20,56 +21,64 @@ export default function Login() {
       await login(data.token, data.usuario);
       navigate('/');
     } catch (err) {
-      setErro(err.message || 'Erro ao fazer login');
+      setErro(err.message || 'Usuário ou senha incorretos');
     } finally {
       setCarregando(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">📸</div>
-          <h1 className="text-2xl font-bold text-gray-800">Foto Manager</h1>
-          <p className="text-sm text-gray-500 mt-1">Eita Casa Perfeita</p>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-14 h-14 bg-brand-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-brand-600/40">
+            <img src={logo} alt="Logo" className="w-8 h-8" />
+          </div>
+          <h1 className="text-xl font-bold text-white">Foto Manager</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Eita Casa Perfeita</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-              placeholder="seu.usuario"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-              placeholder="••••••••"
-            />
-          </div>
+        {/* Card */}
+        <div className="bg-gray-900 rounded-2xl p-8 border border-white/5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Usuário</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent placeholder-gray-600 text-sm"
+                placeholder="seu.usuario"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent placeholder-gray-600 text-sm"
+                placeholder="••••••••"
+              />
+            </div>
 
-          {erro && (
-            <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg">{erro}</div>
-          )}
+            {erro && (
+              <div className="bg-red-500/10 text-red-400 text-sm px-3 py-2.5 rounded-xl border border-red-500/20">
+                {erro}
+              </div>
+            )}
 
-          <button
-            type="submit"
-            disabled={carregando}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
-            {carregando ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={carregando}
+              className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors mt-2"
+            >
+              {carregando ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

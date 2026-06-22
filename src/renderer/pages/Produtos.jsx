@@ -13,6 +13,7 @@ function StatusBadge({ totalFotos, fotosSincronizadas, fotosPendentes }) {
 export default function Produtos() {
   const [produtos, setProdutos] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalVariacoes, setTotalVariacoes] = useState(0);
   const [busca, setBusca] = useState('');
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(false);
@@ -26,6 +27,7 @@ export default function Produtos() {
       const data = await api.getProdutos({ busca, pagina, limite: 50 });
       setProdutos(data.produtos);
       setTotal(data.total);
+      if (data.total_variacoes) setTotalVariacoes(data.total_variacoes);
     } catch (err) {
       console.error(err);
     } finally {

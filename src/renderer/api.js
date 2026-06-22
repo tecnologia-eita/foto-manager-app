@@ -1,5 +1,5 @@
 // URL da API — em produção aponta para fotos.autoeita.space
-const API_URL = import.meta.env.VITE_API_URL || 'https://fotos.autoeita.space';
+const API_URL = import.meta.env.VITE_API_URL || 'https://foto-manager-api.tqgmkj.easypanel.host';
 
 let _token = null;
 
@@ -28,7 +28,10 @@ export const api = {
     return req(`/api/produtos${qs ? '?' + qs : ''}`);
   },
   getProduto: (id) => req(`/api/produtos/${id}`),
-  getComparativo: (id) => req(`/api/produtos/${id}/comparativo`),
+  getComparativo: (id, variacaoId = null) => {
+    const qs = variacaoId ? `?variacao_id=${variacaoId}` : '';
+    return req(`/api/produtos/${id}/comparativo${qs}`);
+  },
 
   // Fotos
   getFotos: (produtoId, params = {}) => {
@@ -38,6 +41,11 @@ export const api = {
   atualizarOrdem: (ordens) => req('/api/fotos/ordem', { method: 'PATCH', body: JSON.stringify({ ordens }) }),
   deletarFoto: (id) => req(`/api/fotos/${id}`, { method: 'DELETE' }),
 
+  // Variações
+  criarVariacao: (produtoId, nome) => req(`/api/produtos/${produtoId}/variacoes`, { method: 'POST', body: JSON.stringify({ nome }) }),
+  deletarVariacao: (produtoId, variacaoId) => req(`/api/produtos/${produtoId}/variacoes/${variacaoId}`, { method: 'DELETE' }),
+  reordenarVariacoes: (produtoId, ordens) => req(`/api/produtos/${produtoId}/variacoes/ordem`, { method: 'PATCH', body: JSON.stringify({ ordens }) }),
+
   // Sync
   triggerSync: () => req('/api/sync', { method: 'POST' }),
   getStatusSync: () => req('/api/sync/status'),
@@ -46,6 +54,16 @@ export const api = {
   publicarTiny: (produtoId, body = {}) => req(`/api/publicar/tiny/${produtoId}`, { method: 'POST', body: JSON.stringify(body) }),
   publicarWbuy: (produtoId, body = {}) => req(`/api/publicar/wbuy/${produtoId}`, { method: 'POST', body: JSON.stringify(body) }),
   publicarAmbos: (produtoId) => req(`/api/publicar/ambos/${produtoId}`, { method: 'POST' }),
+
+  // Importar fotos da Wbuy para o Drive
+  importarFotosWbuy: (produtoId) => req(`/api/fotos/importar-wbuy/${produtoId}`, { method: 'POST' }),
+
+  // Lançamentos
+  getLancamentos: () => req('/api/lancamentos'),
+  criarLancamento: (body) => req('/api/lancamentos', { method: 'POST', body: JSON.stringify(body) }),
+  atualizarLancamento: (id, body) => req(`/api/lancamentos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  publicarLancamentoTiny: (id) => req(`/api/lancamentos/${id}/publicar-tiny`, { method: 'POST' }),
+  concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 
 // Upload multipart — usa window.electronAPI para ler os arquivos locais

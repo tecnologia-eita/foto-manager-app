@@ -3,6 +3,23 @@ import { setToken } from '../api';
 
 const AuthContext = createContext(null);
 
+// Decodifica o payload de um JWT de forma base64url-safe.
+// Retorna null se o token for malformado OU já estiver expirado.
+function decodeJwtPayload(token) {
+  try {
+    const base64url = token.split('.')[1];
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(base64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+    );
+    const payload = JSON.parse(json);
+    if (payload.exp && Date.now() >= payload.exp * 1000) return null; // expirado
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(null);
   const [usuario, setUsuario] = useState(null);
@@ -14,13 +31,19 @@ export function AuthProvider({ children }) {
       try {
         const t = await window.electronAPI?.loadToken();
         if (t) {
-          setToken(t);
-          setTokenState(t);
-          // Decodifica payload JWT sem lib (só base64)
-          const payload = JSON.parse(atob(t.split('.')[1]));
-          setUsuario(payload);
+          const payload = decodeJwtPayload(t);
+          if (payload) {
+            setToken(t);
+            setTokenState(t);
+            setUsuario(payload);
+          } else {
+            // Token expirado ou corrompido — descarta
+            await window.electronAPI?.clearToken();
+          }
         }
-      } catch { /* token inválido */ }
+      } catch {
+        await window.electronAPI?.clearToken().catch(() => {});
+      }
       setCarregando(false);
     })();
   }, []);

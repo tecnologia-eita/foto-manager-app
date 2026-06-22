@@ -4,8 +4,8 @@
   "description": "Gestão de fotos de produtos — Eita Casa Perfeita",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "concurrently \"npm run vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "start": "node run-electron.js",
+    "dev": "concurrently \"npm run vite\" \"wait-on http://localhost:5200 && node run-electron.js\"",
     "vite": "vite",
     "build": "vite build",
     "package": "electron-forge package",
@@ -26,7 +26,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
-    "electron": "^31.0.0",
+    "electron": "^31.7.7",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "vite": "^5.3.1",
@@ -38,20 +38,13 @@
       "packagerConfig": {
         "name": "Foto Manager",
         "icon": "./assets/icon",
-        "appVersion": "1.0.0"
+        "appVersion": "1.0.0",
+        "ignore": ["^/nul$", "^/assets/nul$", "/nul$"]
       },
       "makers": [
         {
-          "name": "@electron-forge/maker-squirrel",
-          "config": { "name": "foto_manager" }
-        },
-        {
           "name": "@electron-forge/maker-zip",
-          "platforms": ["darwin"]
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": ["win32"]
+          "platforms": ["win32", "darwin"]
         }
       ]
     }
