@@ -3,6 +3,42 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useSyncCtx } from '../components/Layout';
 
+// Ícone de caixa (placeholder)
+const IconCaixa = ({ cls }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={cls}>
+    <path d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375z"/>
+    <path fillRule="evenodd" d="M3.087 9l.54 9.176A3 3 0 006.62 21h10.757a3 3 0 002.995-2.824L20.913 9H3.087zm6.163 3.75A.75.75 0 0110 12h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z" clipRule="evenodd"/>
+  </svg>
+);
+
+// Thumbnail do card: mostra a primeira foto; cai para placeholder se não houver/falhar
+function ProdutoThumb({ produto }) {
+  const [erro, setErro] = useState(false);
+  const url = produto.primeira_foto_thumb || produto.primeira_foto_url;
+  const temFotos = parseInt(produto.total_fotos_drive) > 0;
+
+  if (url && !erro) {
+    return (
+      <img
+        src={url}
+        alt={produto.nome}
+        loading="lazy"
+        onError={() => setErro(true)}
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+  if (temFotos) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
+        <IconCaixa cls="w-8 h-8 text-brand-300" />
+      </div>
+    );
+  }
+  return <IconCaixa cls="w-8 h-8 text-gray-200" />;
+}
+
 function StatusBadge({ totalFotos, fotosSincronizadas, fotosPendentes }) {
   if (totalFotos === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">Sem fotos</span>;
   if (fotosPendentes > 0 && fotosSincronizadas === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">No Drive</span>;
@@ -87,18 +123,7 @@ export default function Produtos() {
               className="bg-white rounded-2xl hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all overflow-hidden border border-transparent hover:border-brand-200"
             >
               <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
-                {parseInt(p.total_fotos_drive) > 0 ? (
-                  <div className="w-full h-full bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-brand-300">
-                      <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd"/>
-                    </svg>
-                  </div>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-gray-200">
-                    <path d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375z"/>
-                    <path fillRule="evenodd" d="M3.087 9l.54 9.176A3 3 0 006.62 21h10.757a3 3 0 002.995-2.824L20.913 9H3.087zm6.163 3.75A.75.75 0 0110 12h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z" clipRule="evenodd"/>
-                  </svg>
-                )}
+                <ProdutoThumb produto={p} />
               </div>
               <div className="p-2.5">
                 <p className="text-xs font-semibold text-gray-800 truncate leading-tight" title={p.nome}>{p.nome}</p>
