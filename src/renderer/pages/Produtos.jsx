@@ -144,7 +144,15 @@ export default function Produtos() {
 
       {/* Paginação */}
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
+        <div className="flex items-center justify-center gap-2 mt-6 mb-6">
+          <button
+            disabled={pagina === 1}
+            onClick={() => setPagina(1)}
+            title="Primeira página"
+            className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-xl disabled:opacity-40 hover:bg-gray-50 text-gray-600"
+          >
+            «
+          </button>
           <button
             disabled={pagina === 1}
             onClick={() => setPagina(p => p - 1)}
@@ -159,6 +167,14 @@ export default function Produtos() {
             className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-xl disabled:opacity-40 hover:bg-gray-50 text-gray-600"
           >
             Próxima →
+          </button>
+          <button
+            disabled={pagina === totalPaginas}
+            onClick={() => setPagina(totalPaginas)}
+            title="Última página"
+            className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-xl disabled:opacity-40 hover:bg-gray-50 text-gray-600"
+          >
+            »
           </button>
         </div>
       )}
