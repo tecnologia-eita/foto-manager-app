@@ -57,7 +57,7 @@ export default function Sidebar({ onSync, syncando }) {
   const isLancamentos = location.pathname === '/lancamentos';
 
   return (
-    <aside className="w-[76px] my-3 ml-3 bg-gray-950 rounded-4xl flex flex-col items-center py-5 shrink-0 select-none">
+    <aside className="w-[76px] mt-1 mb-3 ml-3 bg-gray-950 rounded-4xl flex flex-col items-center py-5 shrink-0 select-none">
       {/* Logo */}
       <div className="w-11 h-11 bg-brand-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand-600/40">
         <img src={logo} alt="Logo" className="w-6 h-6" style={{ filter: 'brightness(0) invert(1)' }} />

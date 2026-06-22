@@ -33,7 +33,7 @@ export default function TitleBar() {
 
   return (
     <header
-      className="h-9 shrink-0 bg-gray-100 flex items-center justify-between pl-4 pr-0 select-none"
+      className="h-8 shrink-0 bg-gray-100 flex items-center justify-between pl-4 pr-0 select-none"
       style={{ WebkitAppRegion: 'drag' }}
     >
       <span className="text-[11px] font-medium text-gray-400 tracking-wide">
