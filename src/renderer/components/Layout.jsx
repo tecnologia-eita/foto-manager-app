@@ -47,7 +47,7 @@ export default function Layout() {
     <SyncCtx.Provider value={{ syncando, lastSync }}>
       <div className="flex h-full bg-gray-100 overflow-hidden">
         <Sidebar onSync={handleSync} syncando={syncando} />
-        <main className="flex-1 overflow-y-auto px-3 pb-3 pt-1 min-w-0">
+        <main className="flex-1 overflow-y-auto px-3 pb-6 pt-1 min-w-0">
           <Outlet />
         </main>
       </div>
