@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, driveImg, fileIdFromUrl } from '../api';
 import { useSyncCtx } from '../components/Layout';
 
 // Ícone de caixa (placeholder)
@@ -14,7 +14,10 @@ const IconCaixa = ({ cls }) => (
 // Thumbnail do card: mostra a primeira foto; cai para placeholder se não houver/falhar
 function ProdutoThumb({ produto }) {
   const [erro, setErro] = useState(false);
-  const url = produto.primeira_foto_thumb || produto.primeira_foto_url;
+  const fileId = produto.primeira_foto_id
+    || fileIdFromUrl(produto.primeira_foto_url)
+    || fileIdFromUrl(produto.primeira_foto_thumb);
+  const url = driveImg(fileId, 400);
   const temFotos = parseInt(produto.total_fotos_drive) > 0;
 
   if (url && !erro) {

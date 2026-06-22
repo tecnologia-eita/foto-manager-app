@@ -14,6 +14,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { driveImg, fileIdFromUrl } from '../api';
 
 const STATUS_LABEL = {
   drive: { label: 'Drive', cor: 'bg-gray-100 text-gray-500' },
@@ -66,14 +67,19 @@ function FotoItem({ foto, onDelete, index }) {
         ×
       </button>
 
-      {/* Imagem */}
+      {/* Imagem — CDN lh3 (rápido); se falhar, cai para a URL original do Drive */}
       <div className="aspect-square overflow-hidden bg-gray-50">
         <img
-          src={foto.thumbnail_url || foto.drive_url}
+          src={driveImg(foto.drive_file_id || fileIdFromUrl(foto.drive_url), 500) || foto.thumbnail_url || foto.drive_url}
           alt={foto.nome_arquivo}
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={e => { e.target.style.display = 'none'; }}
+          referrerPolicy="no-referrer"
+          onError={e => {
+            const fb = foto.thumbnail_url || foto.drive_url;
+            if (fb && e.target.src !== fb) { e.target.src = fb; }
+            else { e.target.style.display = 'none'; }
+          }}
         />
       </div>
 

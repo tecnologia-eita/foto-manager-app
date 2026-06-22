@@ -6,6 +6,18 @@ let _token = null;
 export function setToken(t) { _token = t; }
 export function getToken() { return _token; }
 
+// Imagem do Drive via CDN do Google (lh3) — direto, sem o redirect/throttle do
+// drive.google.com. Muito mais rápido para carregar várias fotos de uma vez.
+export function driveImg(fileId, w = 400) {
+  return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w${w}` : null;
+}
+// Extrai o file id de uma URL do Drive (uc?export=view&id=... ou /thumbnail?id=... ou /d/ID)
+export function fileIdFromUrl(url) {
+  if (!url) return null;
+  const m = String(url).match(/[?&]id=([^&]+)/) || String(url).match(/\/d\/([^=/?]+)/);
+  return m ? m[1] : null;
+}
+
 async function req(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
   if (_token) headers.Authorization = `Bearer ${_token}`;
