@@ -30,7 +30,7 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5200');
-    mainWindow.webContents.openDevTools();
+    // DevTools só abre sob demanda (F12 / Ctrl+Shift+I), não automaticamente
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/renderer/index.html'));
   }
