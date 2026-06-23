@@ -393,22 +393,27 @@ export default function Produto() {
           </div>
 
           {adicionandoVariacao && (
-            <form onSubmit={handleAdicionarVariacao} className="mb-2 flex flex-col gap-1 px-1">
+            <form onSubmit={handleAdicionarVariacao} className="mb-2 flex flex-col gap-1.5 px-1">
               <input
                 autoFocus
                 value={novaVariacao}
                 onChange={e => setNovaVariacao(e.target.value)}
                 placeholder="Nome (ex: Rosa)"
-                className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-600"
+                className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-400"
               />
-              <div className="flex gap-1">
-                <input
-                  value={novaVariacaoSku}
-                  onChange={e => setNovaVariacaoSku(e.target.value.toUpperCase())}
-                  placeholder="SKU (p/ Tiny)"
-                  className="flex-1 text-xs font-mono px-2 py-1.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-600"
-                />
-                <button type="submit" className="text-xs px-2 py-1 bg-brand-600 text-white rounded-xl">OK</button>
+              <input
+                value={novaVariacaoSku}
+                onChange={e => setNovaVariacaoSku(e.target.value.toUpperCase())}
+                placeholder="SKU (p/ Tiny e Wbuy)"
+                className="w-full text-xs font-mono px-2 py-1.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-400"
+              />
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => { setAdicionandoVariacao(false); setNovaVariacao(''); setNovaVariacaoSku(''); }}
+                  className="text-xs px-2 py-1.5 text-gray-500 rounded-lg border border-gray-200 hover:bg-gray-50"
+                >Cancelar</button>
+                <button type="submit" className="flex-1 text-xs py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium">Adicionar</button>
               </div>
             </form>
           )}
