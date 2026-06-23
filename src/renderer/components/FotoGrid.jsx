@@ -41,22 +41,27 @@ function FotoItem({ foto, onDelete, index }) {
       style={style}
       className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group shadow-sm"
     >
-      {/* Número de ordem */}
-      <div className="absolute top-2 left-2 bg-black/50 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold z-10">
-        {index + 1}
-      </div>
-
-      {/* Drag handle */}
+      {/* Número de ordem — também é a alça de arrastar */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-2 right-8 z-10 drag-handle opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 rounded p-1"
+        className="absolute top-2 left-2 bg-black/50 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold z-10 cursor-grab active:cursor-grabbing"
         title="Arrastar para reordenar"
       >
-        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-        </svg>
+        {index + 1}
       </div>
+
+      {/* Botão baixar (no topo, ao lado do excluir) */}
+      <button
+        onClick={() => window.electronAPI?.downloadUrl?.(foto.drive_url || foto.thumbnail_url, foto.nome_arquivo)}
+        className="absolute top-2 right-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/55 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/80"
+        title="Baixar foto"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+          <path d="M12 16a1 1 0 01-.7-.3l-4-4a1 1 0 011.4-1.4L11 12.6V4a1 1 0 112 0v8.6l2.3-2.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-.7.3z"/>
+          <path d="M5 20a1 1 0 010-2h14a1 1 0 010 2H5z"/>
+        </svg>
+      </button>
 
       {/* Botão deletar */}
       <button
@@ -66,18 +71,6 @@ function FotoItem({ foto, onDelete, index }) {
       >
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
           <path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z" clipRule="evenodd"/>
-        </svg>
-      </button>
-
-      {/* Botão baixar */}
-      <button
-        onClick={() => window.electronAPI?.downloadUrl?.(foto.drive_url || foto.thumbnail_url, foto.nome_arquivo)}
-        className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/55 text-white w-6 h-6 rounded-lg flex items-center justify-center hover:bg-black/80"
-        title="Baixar foto"
-      >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-          <path d="M12 16a1 1 0 01-.7-.3l-4-4a1 1 0 011.4-1.4L11 12.6V4a1 1 0 112 0v8.6l2.3-2.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-.7.3z"/>
-          <path d="M5 20a1 1 0 010-2h14a1 1 0 010 2H5z"/>
         </svg>
       </button>
 
