@@ -118,6 +118,18 @@ ipcMain.handle('shell:openExternal', (event, url) => {
   shell.openExternal(url);
 });
 
+// IPC: Baixar um arquivo/foto por URL (mostra o diálogo de salvar do sistema).
+// filename opcional sugere o nome no diálogo (preserva o nome SEO).
+ipcMain.handle('download:url', (event, url, filename) => {
+  if (!mainWindow || !url) return;
+  if (filename) {
+    mainWindow.webContents.session.once('will-download', (e, item) => {
+      try { item.setSaveDialogOptions({ defaultPath: filename }); } catch {}
+    });
+  }
+  mainWindow.webContents.downloadURL(url);
+});
+
 // IPC: Controles de janela (barra de título customizada)
 ipcMain.handle('window:minimize', () => mainWindow?.minimize());
 ipcMain.handle('window:toggleMaximize', () => {

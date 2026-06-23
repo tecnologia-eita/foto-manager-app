@@ -67,6 +67,18 @@ function FotoItem({ foto, onDelete, index }) {
         ×
       </button>
 
+      {/* Botão baixar */}
+      <button
+        onClick={() => window.electronAPI?.downloadUrl?.(foto.drive_url || foto.thumbnail_url, foto.nome_arquivo)}
+        className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/55 text-white w-6 h-6 rounded-lg flex items-center justify-center hover:bg-black/80"
+        title="Baixar foto"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+          <path d="M12 16a1 1 0 01-.7-.3l-4-4a1 1 0 011.4-1.4L11 12.6V4a1 1 0 112 0v8.6l2.3-2.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-.7.3z"/>
+          <path d="M5 20a1 1 0 010-2h14a1 1 0 010 2H5z"/>
+        </svg>
+      </button>
+
       {/* Imagem — CDN lh3 (rápido); se falhar, cai para a URL original do Drive */}
       <div className="aspect-square overflow-hidden bg-gray-50">
         <img

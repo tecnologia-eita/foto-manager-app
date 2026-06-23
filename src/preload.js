@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Utilitários
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  downloadUrl: (url, filename) => ipcRenderer.invoke('download:url', url, filename),
 
   // Controles da janela (barra de título customizada)
   window: {

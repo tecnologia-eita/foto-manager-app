@@ -11,6 +11,35 @@ import { api, uploadFotos } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
+// Spinner de loading
+export const Spinner = ({ cls = 'w-4 h-4' }) => (
+  <svg className={`animate-spin ${cls}`} viewBox="0 0 24 24" fill="none">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
+  </svg>
+);
+
+// Ícone de download
+export const IconDownload = ({ cls = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={cls}>
+    <path d="M12 16a1 1 0 01-.7-.3l-4-4a1 1 0 011.4-1.4L11 12.6V4a1 1 0 112 0v8.6l2.3-2.3a1 1 0 011.4 1.4l-4 4a1 1 0 01-.7.3z"/>
+    <path d="M5 20a1 1 0 010-2h14a1 1 0 010 2H5z"/>
+  </svg>
+);
+
+// Dispara o download nativo da URL pelo Electron (filename opcional preserva o nome)
+export function baixarFoto(url, filename) {
+  if (url) window.electronAPI?.downloadUrl?.(url, filename);
+}
+// Extrai um nome de arquivo de uma URL (basename antes da query); vazio se não der
+function nomeDaUrl(url) {
+  try {
+    const path = String(url).split('?')[0];
+    const base = decodeURIComponent(path.substring(path.lastIndexOf('/') + 1));
+    return /\.(jpe?g|png|webp)$/i.test(base) ? base : '';
+  } catch { return ''; }
+}
+
 function ComparativoColuna({ titulo, fotos = [], cor }) {
   return (
     <div className={`flex-1 rounded-2xl p-3 ${cor}`}>
@@ -19,11 +48,23 @@ function ComparativoColuna({ titulo, fotos = [], cor }) {
         <p className="text-xs text-gray-400 py-6 text-center">Sem fotos</p>
       ) : (
         <div className="grid grid-cols-3 gap-2">
-          {fotos.map((url, i) => (
-            <div key={i} className="aspect-square bg-white rounded-xl overflow-hidden shadow-sm">
-              <img src={typeof url === 'string' ? url : url.url || url.driveUrl} alt="" className="w-full h-full object-cover" />
-            </div>
-          ))}
+          {fotos.map((f, i) => {
+            const src = typeof f === 'string' ? f : (f.src || f.url || f.driveUrl);
+            const dl = typeof f === 'string' ? f : (f.dl || src);
+            const nome = (typeof f === 'object' && f.nome) || nomeDaUrl(dl) || undefined;
+            return (
+              <div key={i} className="relative group aspect-square bg-white rounded-xl overflow-hidden shadow-sm">
+                <img src={src} alt="" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => baixarFoto(dl, nome)}
+                  title="Baixar foto"
+                  className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-black/55 hover:bg-black/80 text-white w-6 h-6 rounded-lg flex items-center justify-center transition-opacity"
+                >
+                  <IconDownload />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -290,9 +331,9 @@ export default function Produto() {
                 }
               }}
               disabled={!!publicando}
-              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors ${tinyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
+              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors flex items-center justify-center gap-1.5 ${tinyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
             >
-              {publicando === 'tiny' ? 'Publicando...' : tinyPublicado ? '✓ Tiny' : 'Publicar no Tiny'}
+              {publicando === 'tiny' ? (<><Spinner /> Publicando...</>) : tinyPublicado ? '✓ Tiny' : 'Publicar no Tiny'}
             </button>
 
             <button
@@ -315,9 +356,9 @@ export default function Produto() {
                 }
               }}
               disabled={!!publicando}
-              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors ${wbuyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
+              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors flex items-center justify-center gap-1.5 ${wbuyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
             >
-              {publicando === 'wbuy' ? 'Publicando...' : wbuyPublicado ? '✓ Wbuy' : 'Publicar na Wbuy'}
+              {publicando === 'wbuy' ? (<><Spinner /> Publicando...</>) : wbuyPublicado ? '✓ Wbuy' : 'Publicar na Wbuy'}
             </button>
 
             <button
@@ -333,9 +374,9 @@ export default function Produto() {
                 }
               }}
               disabled={concluindo || !!publicando}
-              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-50 font-semibold transition-colors"
+              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-50 font-semibold transition-colors flex items-center justify-center gap-1.5"
             >
-              {concluindo ? 'Concluindo...' : '✓ Concluir'}
+              {concluindo ? (<><Spinner /> Concluindo...</>) : '✓ Concluir'}
             </button>
           </div>
         ) : (
@@ -358,22 +399,22 @@ export default function Produto() {
                   }
                 }}
                 disabled={importando || !!publicando}
-                className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
               >
-                {importando ? 'Importando...' : `↓ Wbuy → Drive (${produto.fotos_wbuy.length})`}
+                {importando ? (<><Spinner /> Importando...</>) : `↓ Wbuy → Drive (${produto.fotos_wbuy.length})`}
               </button>
             )}
             <button onClick={() => publicar('tiny')} disabled={!!publicando}
-              className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50">
-              {publicando === 'tiny' ? 'Publicando...' : 'Publicar no Tiny'}
+              className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5">
+              {publicando === 'tiny' ? (<><Spinner /> Publicando...</>) : 'Publicar no Tiny'}
             </button>
             <button onClick={() => publicar('wbuy')} disabled={!!publicando}
-              className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50">
-              {publicando === 'wbuy' ? 'Publicando...' : 'Publicar na Wbuy'}
+              className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5">
+              {publicando === 'wbuy' ? (<><Spinner /> Publicando...</>) : 'Publicar na Wbuy'}
             </button>
             <button onClick={() => publicar('ambos')} disabled={!!publicando}
-              className="px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl disabled:opacity-50 font-semibold">
-              {publicando === 'ambos' ? 'Publicando...' : 'Publicar nos Dois'}
+              className="px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl disabled:opacity-50 font-semibold flex items-center justify-center gap-1.5">
+              {publicando === 'ambos' ? (<><Spinner /> Publicando...</>) : 'Publicar nos Dois'}
             </button>
           </div>
         )}
@@ -473,9 +514,9 @@ export default function Produto() {
                 <button
                   onClick={handleUpload}
                   disabled={uploadando}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm rounded-xl disabled:opacity-50 font-medium transition-colors"
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm rounded-xl disabled:opacity-50 font-medium transition-colors flex items-center gap-2"
                 >
-                  {uploadando ? 'Enviando...' : '+ Adicionar fotos'}
+                  {uploadando ? (<><Spinner /> Enviando...</>) : '+ Adicionar fotos'}
                 </button>
               </div>
               <FotoGrid fotos={fotosVariacao} onReorder={handleReorder} onDelete={handleDelete} />
@@ -500,7 +541,7 @@ export default function Produto() {
               <div className="flex gap-3">
                 <ComparativoColuna
                   titulo={`Drive (${comparativo.drive?.length || 0})`}
-                  fotos={comparativo.drive?.map(f => f.thumbnail_url || f.drive_url)}
+                  fotos={comparativo.drive?.map(f => ({ src: f.thumbnail_url || f.drive_url, dl: f.drive_url || f.thumbnail_url, nome: f.nome_arquivo }))}
                   cor="bg-brand-50"
                 />
                 <ComparativoColuna
