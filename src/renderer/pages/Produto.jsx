@@ -7,7 +7,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api, uploadFotos } from '../api';
+import { api, uploadFotos, driveImg, fileIdFromUrl } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
@@ -54,7 +54,7 @@ function ComparativoColuna({ titulo, fotos = [], cor }) {
             const nome = (typeof f === 'object' && f.nome) || nomeDaUrl(dl) || undefined;
             return (
               <div key={i} className="relative group aspect-square bg-white rounded-xl overflow-hidden shadow-sm">
-                <img src={src} alt="" className="w-full h-full object-cover" />
+                <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 <button
                   onClick={() => baixarFoto(dl, nome)}
                   title="Baixar foto"
@@ -541,7 +541,14 @@ export default function Produto() {
               <div className="flex gap-3">
                 <ComparativoColuna
                   titulo={`Drive (${comparativo.drive?.length || 0})`}
-                  fotos={comparativo.drive?.map(f => ({ src: f.thumbnail_url || f.drive_url, dl: f.drive_url || f.thumbnail_url, nome: f.nome_arquivo }))}
+                  fotos={comparativo.drive?.map(f => {
+                    const fid = f.drive_file_id || fileIdFromUrl(f.drive_url);
+                    return {
+                      src: driveImg(fid, 400) || f.thumbnail_url || f.drive_url,
+                      dl: driveImg(fid, 1600) || f.drive_url || f.thumbnail_url,
+                      nome: f.nome_arquivo,
+                    };
+                  })}
                   cor="bg-brand-50"
                 />
                 <ComparativoColuna
