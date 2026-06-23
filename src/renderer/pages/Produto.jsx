@@ -42,42 +42,46 @@ function SortableVariacao({ v, selected, onSelect, onDelete, onEditSku }) {
   const ehPrincipal = v.nome === 'Principal';
   return (
     <div ref={setNodeRef} style={style} className="group">
-      <div className="flex items-center">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing px-1 text-gray-300 hover:text-gray-400 select-none"
-        >
-          ⠿
+      <div className={`rounded-xl overflow-hidden transition-colors ${selected ? 'bg-brand-600 shadow-sm shadow-brand-600/30' : 'hover:bg-gray-100'}`}>
+        <div className="flex items-center">
+          <div
+            {...attributes}
+            {...listeners}
+            className={`cursor-grab active:cursor-grabbing pl-1.5 pr-0.5 py-2 select-none ${selected ? 'text-white/40' : 'text-gray-300 hover:text-gray-400'}`}
+          >
+            ⠿
+          </div>
+          <button onClick={() => onSelect(v.id)} className="flex-1 text-left py-2 min-w-0">
+            <span className={`text-sm block leading-tight truncate ${selected ? 'text-white font-medium' : 'text-gray-700'}`}>{v.nome}</span>
+            {!selected && !ehPrincipal && (
+              <span className={`text-[10px] font-mono block leading-tight truncate ${v.sku_variacao ? 'text-gray-400' : 'text-amber-500'}`}>
+                {v.sku_variacao || 'sem SKU'}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onDelete(v.id)}
+            className={`opacity-0 group-hover:opacity-100 px-1.5 text-sm shrink-0 ${selected ? 'text-white/70 hover:text-white' : 'text-gray-400 hover:text-red-500'}`}
+          >×</button>
         </div>
-        <button
-          onClick={() => onSelect(v.id)}
-          className={`flex-1 text-left px-2 py-2 rounded-xl transition-colors ${
-            selected ? 'bg-brand-600 text-white' : 'hover:bg-gray-100 text-gray-700'
-          }`}
-        >
-          <span className="text-sm block leading-tight">{v.nome}</span>
-          {!selected && v.sku_variacao && (
-            <span className="text-[10px] font-mono text-gray-400 block leading-tight truncate">{v.sku_variacao}</span>
-          )}
-        </button>
-        <button
-          onClick={() => onDelete(v.id)}
-          className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-red-500 text-xs px-1"
-        >×</button>
-      </div>
 
-      {/* SKU editável (p/ casar com a variação no Tiny) — some na "Principal" */}
-      {selected && !ehPrincipal && (
-        <input
-          value={sku}
-          onChange={e => setSku(e.target.value.toUpperCase())}
-          onBlur={() => { if ((v.sku_variacao || '') !== sku.trim()) onEditSku(v.id, sku.trim() || null); }}
-          onKeyDown={e => e.key === 'Enter' && e.target.blur()}
-          placeholder="SKU da variação (Tiny)"
-          className="mt-1 ml-5 w-[calc(100%-1.25rem)] text-[11px] font-mono px-2 py-1 border border-brand-200 rounded-lg bg-brand-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-      )}
+        {/* SKU editável (casa a variação no Tiny e na Wbuy) — some na "Principal" */}
+        {selected && !ehPrincipal && (
+          <div className="px-2 pb-2">
+            <div className="flex items-center gap-1.5 bg-white/15 rounded-lg px-2 py-1">
+              <span className="text-[9px] uppercase tracking-wider text-white/60 font-bold shrink-0">SKU</span>
+              <input
+                value={sku}
+                onChange={e => setSku(e.target.value.toUpperCase())}
+                onBlur={() => { if ((v.sku_variacao || '') !== sku.trim()) onEditSku(v.id, sku.trim() || null); }}
+                onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                placeholder="cód. da variação"
+                className="flex-1 min-w-0 bg-transparent text-[11px] font-mono text-white placeholder-white/40 focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
