@@ -148,6 +148,9 @@ export default function Produto() {
   const [novaVariacao, setNovaVariacao] = useState('');
   const [novaVariacaoSku, setNovaVariacaoSku] = useState('');
   const [adicionandoVariacao, setAdicionandoVariacao] = useState(false);
+  const [copiarMenu, setCopiarMenu] = useState(false);
+  const [copiando, setCopiando] = useState(false);
+  const [arrastando, setArrastando] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -194,16 +197,49 @@ export default function Produto() {
       setUploadando(true);
       setMensagem('');
       const result = await uploadFotos(id, variacaoSelecionada, filePaths);
-      setMensagem(result.erros?.length
+      const avisos = (result.uploaded || []).filter(u => u.avisos?.length)
+        .map(u => `${u.arquivo || u.nome_arquivo}: ${u.avisos.join(', ')}`);
+      let msg = result.erros?.length
         ? `${result.uploaded.length} OK. Erros: ${result.erros.map(e => e.arquivo).join(', ')}`
-        : `${result.uploaded.length} foto(s) adicionada(s)!`
-      );
+        : `${result.uploaded.length} foto(s) adicionada(s)!`;
+      if (avisos.length) msg += ` ⚠️ ${avisos.join(' · ')}`;
+      setMensagem(msg);
       carregar();
     } catch (err) {
       setMensagem('Erro no upload: ' + err.message);
     } finally {
       setUploadando(false);
     }
+  }
+
+  // Upload por arrastar-e-soltar arquivos direto na grade (Electron expõe file.path)
+  async function handleDrop(e) {
+    e.preventDefault();
+    setArrastando(false);
+    const paths = Array.from(e.dataTransfer.files || []).map(f => f.path).filter(Boolean);
+    if (!paths.length) return;
+    try {
+      setUploadando(true); setMensagem('');
+      const result = await uploadFotos(id, variacaoSelecionada, paths);
+      setMensagem(`${result.uploaded.length} foto(s) adicionada(s)!`);
+      carregar();
+    } catch (err) {
+      setMensagem('Erro no upload: ' + err.message);
+    } finally { setUploadando(false); }
+  }
+
+  // Copia as fotos de outra variação para a variação selecionada
+  async function handleCopiarDe(origemId) {
+    setCopiarMenu(false);
+    if (!variacaoSelecionada) return;
+    setCopiando(true); setMensagem('');
+    try {
+      const r = await api.copiarVariacao(id, origemId, variacaoSelecionada);
+      setMensagem(`${r.copiadas} foto(s) copiada(s) para esta variação.`);
+      carregar();
+    } catch (err) {
+      setMensagem('Erro ao copiar: ' + err.message);
+    } finally { setCopiando(false); }
   }
 
   async function handleReorder(oldIndex, newIndex) {
@@ -511,15 +547,48 @@ export default function Produto() {
             <>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-400">{fotosVariacao.length} foto(s) · arraste para reordenar</p>
-                <button
-                  onClick={handleUpload}
-                  disabled={uploadando}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm rounded-xl disabled:opacity-50 font-medium transition-colors flex items-center gap-2"
-                >
-                  {uploadando ? (<><Spinner /> Enviando...</>) : '+ Adicionar fotos'}
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Copiar fotos de outra variação */}
+                  {variacaoSelecionada && variacoes.filter(v => v.id !== variacaoSelecionada).length > 0 && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setCopiarMenu(m => !m)}
+                        disabled={copiando}
+                        className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-xl border border-gray-200 disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {copiando ? (<><Spinner /> Copiando...</>) : 'Copiar de…'}
+                      </button>
+                      {copiarMenu && (
+                        <div className="absolute right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44 max-h-60 overflow-y-auto">
+                          {variacoes.filter(v => v.id !== variacaoSelecionada).map(v => (
+                            <button key={v.id} onClick={() => handleCopiarDe(v.id)}
+                              className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 truncate">
+                              {v.nome}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploadando}
+                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm rounded-xl disabled:opacity-50 font-medium transition-colors flex items-center gap-2"
+                  >
+                    {uploadando ? (<><Spinner /> Enviando...</>) : '+ Adicionar fotos'}
+                  </button>
+                </div>
               </div>
-              <FotoGrid fotos={fotosVariacao} onReorder={handleReorder} onDelete={handleDelete} />
+              {/* Zona de drag-and-drop */}
+              <div
+                onDrop={handleDrop}
+                onDragOver={e => { e.preventDefault(); if (!arrastando) setArrastando(true); }}
+                onDragLeave={e => { e.preventDefault(); setArrastando(false); }}
+                className={`rounded-2xl transition-colors ${arrastando ? 'ring-2 ring-brand-500 ring-dashed bg-brand-50/50 p-2' : ''}`}
+              >
+                {arrastando && <p className="text-center text-sm text-brand-600 py-2">Solte as imagens aqui para enviar</p>}
+                <FotoGrid fotos={fotosVariacao} onReorder={handleReorder} onDelete={handleDelete} />
+              </div>
             </>
           )}
 

@@ -18,6 +18,15 @@ export function fileIdFromUrl(url) {
   return m ? m[1] : null;
 }
 
+// Notificação nativa do sistema (ao terminar tarefas longas)
+export function notificar(titulo, corpo) {
+  try {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'granted') new Notification(titulo, { body: corpo });
+    else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => { if (p === 'granted') new Notification(titulo, { body: corpo }); });
+  } catch {}
+}
+
 async function req(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
   if (_token) headers.Authorization = `Bearer ${_token}`;
@@ -40,6 +49,8 @@ export const api = {
     return req(`/api/produtos${qs ? '?' + qs : ''}`);
   },
   getProduto: (id) => req(`/api/produtos/${id}`),
+  getPendencias: () => req('/api/produtos/pendencias'),
+  republicar: (id, destino = 'ambos') => req(`/api/produtos/${id}/republicar`, { method: 'POST', body: JSON.stringify({ destino }) }),
   getComparativo: (id, variacaoId = null) => {
     const qs = variacaoId ? `?variacao_id=${variacaoId}` : '';
     return req(`/api/produtos/${id}/comparativo${qs}`);
@@ -51,6 +62,8 @@ export const api = {
     return req(`/api/fotos/${produtoId}${qs ? '?' + qs : ''}`);
   },
   atualizarOrdem: (ordens) => req('/api/fotos/ordem', { method: 'PATCH', body: JSON.stringify({ ordens }) }),
+  copiarVariacao: (produto_id, origem_variacao_id, destino_variacao_id) =>
+    req('/api/fotos/copiar-variacao', { method: 'POST', body: JSON.stringify({ produto_id, origem_variacao_id, destino_variacao_id }) }),
   deletarFoto: (id) => req(`/api/fotos/${id}`, { method: 'DELETE' }),
 
   // Variações
@@ -70,6 +83,10 @@ export const api = {
 
   // Importar fotos da Wbuy para o Drive
   importarFotosWbuy: (produtoId) => req(`/api/fotos/importar-wbuy/${produtoId}`, { method: 'POST' }),
+
+  // Reprocessar fotos antigas (1:1 + 500KB)
+  reprocessarTodos: () => req('/api/fotos/reprocessar-todos', { method: 'POST' }),
+  statusReprocessar: () => req('/api/fotos/reprocessar-todos/status'),
 
   // Lançamentos
   getLancamentos: () => req('/api/lancamentos'),

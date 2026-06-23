@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Produtos from './pages/Produtos';
 import Produto from './pages/Produto';
 import Lancamentos from './pages/Lancamentos';
+import Pendencias from './pages/Pendencias';
 
 function PrivateRoutes() {
   const { token } = useAuth();
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route element={<PrivateRoutes />}>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Produtos />} />
+                  <Route path="/pendencias" element={<Pendencias />} />
                   <Route path="/lancamentos" element={<Lancamentos />} />
                   <Route path="/produto/:id" element={<Produto />} />
                 </Route>

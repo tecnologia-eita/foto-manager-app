@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -23,7 +23,7 @@ const STATUS_LABEL = {
   synced_ambos: { label: 'Ambos ✓', cor: 'bg-green-100 text-green-600' },
 };
 
-function FotoItem({ foto, onDelete, index }) {
+function FotoItem({ foto, onDelete, onView, index }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: foto.id });
 
   const style = {
@@ -77,8 +77,8 @@ function FotoItem({ foto, onDelete, index }) {
         </svg>
       </button>
 
-      {/* Imagem — CDN lh3 (rápido); se falhar, cai para a URL original do Drive */}
-      <div className="aspect-square overflow-hidden bg-gray-50">
+      {/* Imagem — CDN lh3 (rápido); se falhar, cai para a URL original do Drive. Clique abre o lightbox. */}
+      <div className="aspect-square overflow-hidden bg-gray-50 cursor-zoom-in" onClick={() => onView?.(foto)}>
         <img
           src={driveImg(foto.drive_file_id || fileIdFromUrl(foto.drive_url), 500) || foto.thumbnail_url || foto.drive_url}
           alt={foto.nome_arquivo}
@@ -96,13 +96,25 @@ function FotoItem({ foto, onDelete, index }) {
       {/* Info */}
       <div className="p-2">
         <p className="text-xs text-gray-500 truncate" title={foto.nome_arquivo}>{foto.nome_arquivo}</p>
-        <span className={`text-xs px-1.5 py-0.5 rounded-full ${badge.cor}`}>{badge.label}</span>
+        <div className="flex items-center justify-between gap-1">
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ${badge.cor}`}>{badge.label}</span>
+          {foto.uploaded_by && (
+            <span className="text-[10px] text-gray-400 truncate" title={`Enviada por ${foto.uploaded_by}`}>por {foto.uploaded_by}</span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 export default function FotoGrid({ fotos, onReorder, onDelete }) {
+  const [lightbox, setLightbox] = useState(null);
+  React.useEffect(() => {
+    if (!lightbox) return;
+    const onKey = e => { if (e.key === 'Escape') setLightbox(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox]);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -127,14 +139,37 @@ export default function FotoGrid({ fotos, onReorder, onDelete }) {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={fotos.map(f => f.id)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-          {fotos.map((foto, i) => (
-            <FotoItem key={foto.id} foto={foto} onDelete={onDelete} index={i} />
-          ))}
+    <>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={fotos.map(f => f.id)} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            {fotos.map((foto, i) => (
+              <FotoItem key={foto.id} foto={foto} onDelete={onDelete} onView={setLightbox} index={i} />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-8 cursor-zoom-out"
+        >
+          <img
+            src={driveImg(lightbox.drive_file_id || fileIdFromUrl(lightbox.drive_url), 1600) || lightbox.drive_url}
+            alt={lightbox.nome_arquivo}
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            referrerPolicy="no-referrer"
+          />
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none"
+            title="Fechar (Esc)"
+          >×</button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">{lightbox.nome_arquivo}</div>
         </div>
-      </SortableContext>
-    </DndContext>
+      )}
+    </>
   );
 }

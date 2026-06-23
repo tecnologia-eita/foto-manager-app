@@ -127,7 +127,7 @@ export default function Lancamentos() {
   }
 
   async function handleDelete(id, nome) {
-    if (!confirm(`Excluir o lançamento "${nome}"? As fotos no Drive serão mantidas.`)) return;
+    if (!confirm(`Excluir o lançamento "${nome}"? As fotos no Drive também serão APAGADAS.`)) return;
     try {
       await api.concluirLancamento(id);
       setLancamentos(prev => prev.filter(l => l.id !== id));
