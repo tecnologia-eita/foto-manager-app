@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, driveImg, fileIdFromUrl, notificar } from '../api';
+import { api, driveImg, fileIdFromUrl } from '../api';
 import { useSyncCtx } from '../components/Layout';
 
 // Ícone de caixa (placeholder)
@@ -58,8 +58,6 @@ export default function Produtos() {
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(false);
   const [statusSync, setStatusSync] = useState(null);
-  const [selecao, setSelecao] = useState(() => new Set());
-  const [lote, setLote] = useState(null);             // { atual, total, ok, erro } durante importação em lote
   const navigate = useNavigate();
   const { lastSync } = useSyncCtx();
 
@@ -82,27 +80,6 @@ export default function Produtos() {
   useEffect(() => { api.getStatusSync().then(setStatusSync).catch(() => {}); }, [lastSync]);
 
   const totalPaginas = Math.ceil(total / 48);
-
-  function toggleSel(id, e) {
-    e.stopPropagation();
-    setSelecao(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
-  }
-  function selecionarPagina() { setSelecao(new Set(produtos.map(p => p.id))); }
-  function limparSelecao() { setSelecao(new Set()); }
-
-  // Importa fotos da Wbuy → Drive para todos os selecionados (sequencial, com progresso)
-  async function importarLote() {
-    const ids = [...selecao];
-    setLote({ atual: 0, total: ids.length, ok: 0, erro: 0 });
-    for (let i = 0; i < ids.length; i++) {
-      try { await api.importarFotosWbuy(ids[i]); setLote(l => ({ ...l, atual: i + 1, ok: l.ok + 1 })); }
-      catch { setLote(l => ({ ...l, atual: i + 1, erro: l.erro + 1 })); }
-    }
-    setLote(l => { notificar('Importação concluída', `${l.ok} ok${l.erro ? `, ${l.erro} com erro` : ''}`); return { ...l, done: true }; });
-    limparSelecao();
-    carregar();
-    setTimeout(() => setLote(null), 4000);
-  }
 
   const FILTROS = [
     { k: '', label: 'Todos' },
@@ -147,26 +124,6 @@ export default function Produtos() {
         </div>
       </div>
 
-      {/* Barra de seleção: aparece quando há produtos selecionados */}
-      {selecao.size > 0 && (
-        <div className="bg-brand-600 text-white rounded-2xl px-5 py-2.5 mb-3 flex items-center justify-between shadow-lg shadow-brand-600/20">
-          <span className="text-sm font-medium">{selecao.size} selecionado(s)</span>
-          <div className="flex items-center gap-2">
-            <button onClick={selecionarPagina} className="text-xs px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25">Selecionar página</button>
-            <button onClick={importarLote} disabled={!!lote && !lote.done}
-              className="text-xs px-3 py-1.5 rounded-lg bg-white text-brand-700 font-semibold hover:bg-brand-50 disabled:opacity-60">
-              {lote && !lote.done ? `Importando ${lote.atual}/${lote.total}…` : 'Importar fotos da Wbuy'}
-            </button>
-            <button onClick={limparSelecao} className="text-xs px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25">Limpar</button>
-          </div>
-        </div>
-      )}
-      {lote && lote.done && (
-        <div className="bg-green-50 text-green-700 rounded-xl px-4 py-2 mb-3 text-sm">
-          Importação em lote: {lote.ok} ok{lote.erro ? `, ${lote.erro} com erro` : ''}.
-        </div>
-      )}
-
       {/* Grid de produtos */}
       {carregando ? (
         <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Carregando...</div>
@@ -183,26 +140,12 @@ export default function Produtos() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {produtos.map(p => {
-            const sel = selecao.has(p.id);
-            return (
+          {produtos.map(p => (
             <div
               key={p.id}
               onClick={() => navigate(`/produto/${p.id}`)}
-              className={`bg-white rounded-2xl hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all overflow-hidden border group relative ${
-                sel ? 'border-brand-500 ring-2 ring-brand-500' : 'border-transparent hover:border-brand-200'
-              }`}
+              className="bg-white rounded-2xl hover:shadow-md hover:scale-[1.02] cursor-pointer transition-all overflow-hidden border border-transparent hover:border-brand-200"
             >
-              {/* Checkbox de seleção */}
-              <button
-                onClick={e => toggleSel(p.id, e)}
-                title="Selecionar"
-                className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md flex items-center justify-center transition ${
-                  sel ? 'bg-brand-600 text-white' : 'bg-white/80 text-transparent border border-gray-300 group-hover:text-gray-300'
-                }`}
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 011.04-.207z" clipRule="evenodd"/></svg>
-              </button>
               <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
                 <ProdutoThumb produto={p} />
               </div>
@@ -216,7 +159,7 @@ export default function Produtos() {
                 />
               </div>
             </div>
-          );})}
+          ))}
         </div>
       )}
 
