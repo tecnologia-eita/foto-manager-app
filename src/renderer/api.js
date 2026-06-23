@@ -76,6 +76,7 @@ export const api = {
   criarLancamento: (body) => req('/api/lancamentos', { method: 'POST', body: JSON.stringify(body) }),
   atualizarLancamento: (id, body) => req(`/api/lancamentos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   publicarLancamentoTiny: (id) => req(`/api/lancamentos/${id}/publicar-tiny`, { method: 'POST' }),
+  publicarLancamentoWbuy: (id) => req(`/api/lancamentos/${id}/publicar-wbuy`, { method: 'POST' }),
   concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 

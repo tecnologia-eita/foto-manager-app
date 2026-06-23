@@ -95,6 +95,7 @@ export default function Produto() {
   const [uploadando, setUploadando] = useState(false);
   const [publicando, setPublicando] = useState('');
   const [tinyPublicado, setTinyPublicado] = useState(false);
+  const [wbuyPublicado, setWbuyPublicado] = useState(false);
   const [concluindo, setConcluindo] = useState(false);
   const [importando, setImportando] = useState(false);
   const [mensagem, setMensagem] = useState('');
@@ -262,54 +263,76 @@ export default function Produto() {
         {produto.lancamento ? (
           /* Modo lançamento */
           <div className="flex items-center gap-2 shrink-0">
-            {!tinyPublicado ? (
-              <button
-                onClick={async () => {
-                  setPublicando('tiny');
-                  setMensagem('');
-                  try {
-                    const result = await api.publicarLancamentoTiny(id);
-                    const totalVar = (result.variacoes || []).reduce((s, v) => s + v.fotos, 0);
-                    const total = (result.principal || 0) + totalVar;
-                    let msg = `${total} foto(s) publicadas no Tiny`;
-                    if (result.variacoes?.length) msg += ` · ${result.variacoes.length} variação(ões) casada(s) por SKU`;
-                    if (result.naoCasadas?.length) {
-                      msg += `. ✗ ${result.naoCasadas.length} NÃO publicada(s): ` +
-                        result.naoCasadas.map(n => `"${n.nome}" (${n.motivo})`).join('; ');
-                    }
-                    setMensagem(msg);
-                    // Só libera "Concluir" se TUDO casou; senão deixa re-publicar após ajustar SKUs
-                    if (!result.naoCasadas?.length) setTinyPublicado(true);
-                  } catch (err) {
-                    setMensagem('Erro: ' + err.message);
-                  } finally {
-                    setPublicando('');
+            <button
+              onClick={async () => {
+                setPublicando('tiny');
+                setMensagem('');
+                try {
+                  const result = await api.publicarLancamentoTiny(id);
+                  const totalVar = (result.variacoes || []).reduce((s, v) => s + v.fotos, 0);
+                  const total = (result.principal || 0) + totalVar;
+                  let msg = `Tiny: ${total} foto(s)`;
+                  if (result.variacoes?.length) msg += ` · ${result.variacoes.length} variação(ões) por SKU`;
+                  if (result.naoCasadas?.length) {
+                    msg += `. ✗ ${result.naoCasadas.length} NÃO publicada(s): ` +
+                      result.naoCasadas.map(n => `"${n.nome}" (${n.motivo})`).join('; ');
                   }
-                }}
-                disabled={!!publicando}
-                className="px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl disabled:opacity-50 font-semibold transition-colors"
-              >
-                {publicando === 'tiny' ? 'Publicando...' : 'Adicionar ao produto no Tiny'}
-              </button>
-            ) : (
-              <button
-                onClick={async () => {
-                  if (!confirm('Confirma conclusão? O lançamento será removido desta aba.')) return;
-                  setConcluindo(true);
-                  try {
-                    await api.concluirLancamento(id);
-                    navigate('/lancamentos');
-                  } catch (err) {
-                    setMensagem('Erro ao concluir: ' + err.message);
-                    setConcluindo(false);
+                  setMensagem(msg);
+                  if (!result.naoCasadas?.length) setTinyPublicado(true);
+                } catch (err) {
+                  setMensagem('Erro Tiny: ' + err.message);
+                } finally {
+                  setPublicando('');
+                }
+              }}
+              disabled={!!publicando}
+              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors ${tinyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
+            >
+              {publicando === 'tiny' ? 'Publicando...' : tinyPublicado ? '✓ Tiny' : 'Publicar no Tiny'}
+            </button>
+
+            <button
+              onClick={async () => {
+                setPublicando('wbuy');
+                setMensagem('');
+                try {
+                  const result = await api.publicarLancamentoWbuy(id);
+                  let msg = `Wbuy: ${result.fotosPublicadas} foto(s) · ${result.comCor} com cor`;
+                  if (result.naoCasadas?.length) {
+                    msg += `. ✗ não casou por SKU: ` +
+                      result.naoCasadas.map(n => `"${n.nome}" (${n.fotos})`).join('; ');
                   }
-                }}
-                disabled={concluindo}
-                className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-50 font-semibold transition-colors"
-              >
-                {concluindo ? 'Concluindo...' : '✓ Concluir lançamento'}
-              </button>
-            )}
+                  setMensagem(msg);
+                  if (!result.naoCasadas?.length) setWbuyPublicado(true);
+                } catch (err) {
+                  setMensagem('Erro Wbuy: ' + err.message);
+                } finally {
+                  setPublicando('');
+                }
+              }}
+              disabled={!!publicando}
+              className={`px-3 py-1.5 text-sm rounded-xl disabled:opacity-50 font-semibold transition-colors ${wbuyPublicado ? 'bg-green-100 text-green-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}
+            >
+              {publicando === 'wbuy' ? 'Publicando...' : wbuyPublicado ? '✓ Wbuy' : 'Publicar na Wbuy'}
+            </button>
+
+            <button
+              onClick={async () => {
+                if (!confirm('Confirma conclusão? O lançamento será removido desta aba.')) return;
+                setConcluindo(true);
+                try {
+                  await api.concluirLancamento(id);
+                  navigate('/lancamentos');
+                } catch (err) {
+                  setMensagem('Erro ao concluir: ' + err.message);
+                  setConcluindo(false);
+                }
+              }}
+              disabled={concluindo || !!publicando}
+              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-xl disabled:opacity-50 font-semibold transition-colors"
+            >
+              {concluindo ? 'Concluindo...' : '✓ Concluir'}
+            </button>
           </div>
         ) : (
           /* Modo produto normal */
