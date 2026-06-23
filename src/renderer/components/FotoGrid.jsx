@@ -41,14 +41,17 @@ function FotoItem({ foto, onDelete, index }) {
       style={style}
       className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group shadow-sm"
     >
-      {/* Número de ordem — também é a alça de arrastar */}
+      {/* Número de ordem — também é a alça de arrastar (mostra os pontinhos no hover) */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-2 left-2 bg-black/50 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold z-10 cursor-grab active:cursor-grabbing"
-        title="Arrastar para reordenar"
+        className="absolute top-2 left-2 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-xs font-bold rounded-full cursor-grab active:cursor-grabbing transition-colors group-hover:ring-2 group-hover:ring-white/40"
+        title="Arraste para reordenar"
       >
-        {index + 1}
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity">
+          <path d="M9 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 19a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 19a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+        </svg>
+        <span>{index + 1}</span>
       </div>
 
       {/* Botão baixar (no topo, ao lado do excluir) */}
