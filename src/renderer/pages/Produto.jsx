@@ -30,34 +30,54 @@ function ComparativoColuna({ titulo, fotos = [], cor }) {
   );
 }
 
-function SortableVariacao({ v, selected, onSelect, onDelete }) {
+function SortableVariacao({ v, selected, onSelect, onDelete, onEditSku }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: v.id });
+  const [sku, setSku] = useState(v.sku_variacao || '');
+  useEffect(() => { setSku(v.sku_variacao || ''); }, [v.sku_variacao]);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
   };
+  const ehPrincipal = v.nome === 'Principal';
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center group">
-      <div
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing px-1 text-gray-300 hover:text-gray-400 select-none"
-      >
-        ⠿
+    <div ref={setNodeRef} style={style} className="group">
+      <div className="flex items-center">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing px-1 text-gray-300 hover:text-gray-400 select-none"
+        >
+          ⠿
+        </div>
+        <button
+          onClick={() => onSelect(v.id)}
+          className={`flex-1 text-left px-2 py-2 rounded-xl transition-colors ${
+            selected ? 'bg-brand-600 text-white' : 'hover:bg-gray-100 text-gray-700'
+          }`}
+        >
+          <span className="text-sm block leading-tight">{v.nome}</span>
+          {!selected && v.sku_variacao && (
+            <span className="text-[10px] font-mono text-gray-400 block leading-tight truncate">{v.sku_variacao}</span>
+          )}
+        </button>
+        <button
+          onClick={() => onDelete(v.id)}
+          className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-red-500 text-xs px-1"
+        >×</button>
       </div>
-      <button
-        onClick={() => onSelect(v.id)}
-        className={`flex-1 text-left text-sm px-2 py-2 rounded-xl transition-colors ${
-          selected ? 'bg-brand-600 text-white' : 'hover:bg-gray-100 text-gray-700'
-        }`}
-      >
-        {v.nome}
-      </button>
-      <button
-        onClick={() => onDelete(v.id)}
-        className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-red-500 text-xs px-1"
-      >×</button>
+
+      {/* SKU editável (p/ casar com a variação no Tiny) — some na "Principal" */}
+      {selected && !ehPrincipal && (
+        <input
+          value={sku}
+          onChange={e => setSku(e.target.value.toUpperCase())}
+          onBlur={() => { if ((v.sku_variacao || '') !== sku.trim()) onEditSku(v.id, sku.trim() || null); }}
+          onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+          placeholder="SKU da variação (Tiny)"
+          className="mt-1 ml-5 w-[calc(100%-1.25rem)] text-[11px] font-mono px-2 py-1 border border-brand-200 rounded-lg bg-brand-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+      )}
     </div>
   );
 }
@@ -80,6 +100,7 @@ export default function Produto() {
   const [mensagem, setMensagem] = useState('');
   const [abaAtiva, setAbaAtiva] = useState('fotos');
   const [novaVariacao, setNovaVariacao] = useState('');
+  const [novaVariacaoSku, setNovaVariacaoSku] = useState('');
   const [adicionandoVariacao, setAdicionandoVariacao] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -155,12 +176,22 @@ export default function Produto() {
     e.preventDefault();
     if (!novaVariacao.trim()) return;
     try {
-      await api.criarVariacao(id, novaVariacao.trim());
+      await api.criarVariacao(id, novaVariacao.trim(), novaVariacaoSku.trim() || null);
       setNovaVariacao('');
+      setNovaVariacaoSku('');
       setAdicionandoVariacao(false);
       carregar();
     } catch (err) {
       setMensagem('Erro ao criar variação: ' + err.message);
+    }
+  }
+
+  async function handleEditarVariacaoSku(variacaoId, sku_variacao) {
+    try {
+      await api.editarVariacao(id, variacaoId, { sku_variacao });
+      setVariacoes(prev => prev.map(v => v.id === variacaoId ? { ...v, sku_variacao } : v));
+    } catch (err) {
+      setMensagem('Erro ao salvar SKU da variação: ' + err.message);
     }
   }
 
@@ -238,8 +269,17 @@ export default function Produto() {
                   setMensagem('');
                   try {
                     const result = await api.publicarLancamentoTiny(id);
-                    setMensagem(`${result.fotosPublicadas} foto(s) publicadas no Tiny!`);
-                    setTinyPublicado(true);
+                    const totalVar = (result.variacoes || []).reduce((s, v) => s + v.fotos, 0);
+                    const total = (result.principal || 0) + totalVar;
+                    let msg = `${total} foto(s) publicadas no Tiny`;
+                    if (result.variacoes?.length) msg += ` · ${result.variacoes.length} variação(ões) casada(s) por SKU`;
+                    if (result.naoCasadas?.length) {
+                      msg += `. ✗ ${result.naoCasadas.length} NÃO publicada(s): ` +
+                        result.naoCasadas.map(n => `"${n.nome}" (${n.motivo})`).join('; ');
+                    }
+                    setMensagem(msg);
+                    // Só libera "Concluir" se TUDO casou; senão deixa re-publicar após ajustar SKUs
+                    if (!result.naoCasadas?.length) setTinyPublicado(true);
                   } catch (err) {
                     setMensagem('Erro: ' + err.message);
                   } finally {
@@ -330,15 +370,23 @@ export default function Produto() {
           </div>
 
           {adicionandoVariacao && (
-            <form onSubmit={handleAdicionarVariacao} className="mb-2 flex gap-1 px-1">
+            <form onSubmit={handleAdicionarVariacao} className="mb-2 flex flex-col gap-1 px-1">
               <input
                 autoFocus
                 value={novaVariacao}
                 onChange={e => setNovaVariacao(e.target.value)}
-                placeholder="Ex: Rosa"
-                className="flex-1 text-xs px-2 py-1.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-600"
+                placeholder="Nome (ex: Rosa)"
+                className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-600"
               />
-              <button type="submit" className="text-xs px-2 py-1 bg-brand-600 text-white rounded-xl">OK</button>
+              <div className="flex gap-1">
+                <input
+                  value={novaVariacaoSku}
+                  onChange={e => setNovaVariacaoSku(e.target.value.toUpperCase())}
+                  placeholder="SKU (p/ Tiny)"
+                  className="flex-1 text-xs font-mono px-2 py-1.5 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-600"
+                />
+                <button type="submit" className="text-xs px-2 py-1 bg-brand-600 text-white rounded-xl">OK</button>
+              </div>
             </form>
           )}
 
@@ -352,6 +400,7 @@ export default function Produto() {
                     selected={variacaoSelecionada === v.id}
                     onSelect={setVariacaoSelecionada}
                     onDelete={handleDeletarVariacao}
+                    onEditSku={handleEditarVariacaoSku}
                   />
                 ))}
               </div>

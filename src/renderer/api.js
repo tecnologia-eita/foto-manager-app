@@ -54,7 +54,8 @@ export const api = {
   deletarFoto: (id) => req(`/api/fotos/${id}`, { method: 'DELETE' }),
 
   // Variações
-  criarVariacao: (produtoId, nome) => req(`/api/produtos/${produtoId}/variacoes`, { method: 'POST', body: JSON.stringify({ nome }) }),
+  criarVariacao: (produtoId, nome, sku_variacao) => req(`/api/produtos/${produtoId}/variacoes`, { method: 'POST', body: JSON.stringify({ nome, sku_variacao }) }),
+  editarVariacao: (produtoId, variacaoId, body) => req(`/api/produtos/${produtoId}/variacoes/${variacaoId}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deletarVariacao: (produtoId, variacaoId) => req(`/api/produtos/${produtoId}/variacoes/${variacaoId}`, { method: 'DELETE' }),
   reordenarVariacoes: (produtoId, ordens) => req(`/api/produtos/${produtoId}/variacoes/ordem`, { method: 'PATCH', body: JSON.stringify({ ordens }) }),
 
