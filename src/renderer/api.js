@@ -98,6 +98,25 @@ export const api = {
   concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 
+// Upload de objetos File (ex.: drag-and-drop) — lê os bytes direto no renderer,
+// sem passar pelo file:read do Electron (que só autoriza arquivos do seletor nativo).
+export async function uploadFotosFiles(produtoId, variacaoId, files) {
+  const formData = new FormData();
+  formData.append('produto_id', produtoId);
+  if (variacaoId) formData.append('variacao_id', variacaoId);
+  for (const file of files) {
+    // só imagens
+    if (file.type && !file.type.startsWith('image/')) continue;
+    formData.append('files', file, file.name);
+  }
+  const headers = {};
+  if (_token) headers.Authorization = `Bearer ${_token}`;
+  const res = await fetch(`${API_URL}/api/fotos/upload`, { method: 'POST', headers, body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
 // Upload multipart — usa window.electronAPI para ler os arquivos locais
 export async function uploadFotos(produtoId, variacaoId, filePaths) {
   const formData = new FormData();

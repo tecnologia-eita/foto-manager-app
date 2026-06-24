@@ -7,7 +7,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api, uploadFotos, driveImg, fileIdFromUrl } from '../api';
+import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
@@ -218,17 +218,18 @@ export default function Produto() {
   function handleDragEnter(e) { e.preventDefault(); dragCount.current++; if (dragCount.current === 1) setArrastando(true); }
   function handleDragLeave(e) { e.preventDefault(); dragCount.current = Math.max(0, dragCount.current - 1); if (dragCount.current === 0) setArrastando(false); }
 
-  // Upload por arrastar-e-soltar arquivos direto na grade (Electron expõe file.path)
+  // Upload por arrastar-e-soltar: lê os File objects direto (sem o file:read do Electron)
   async function handleDrop(e) {
     e.preventDefault();
     dragCount.current = 0;
     setArrastando(false);
-    const paths = Array.from(e.dataTransfer.files || []).map(f => f.path).filter(Boolean);
-    if (!paths.length) return;
+    const files = Array.from(e.dataTransfer.files || []).filter(f => !f.type || f.type.startsWith('image/'));
+    if (!files.length) return;
     try {
       setUploadando(true); setMensagem('');
-      const result = await uploadFotos(id, variacaoSelecionada, paths);
-      setMensagem(`${result.uploaded.length} foto(s) adicionada(s)!`);
+      const result = await uploadFotosFiles(id, variacaoSelecionada, files);
+      const avisos = (result.uploaded || []).filter(u => u.avisos?.length).map(u => `${u.arquivo || u.nome_arquivo}: ${u.avisos.join(', ')}`);
+      setMensagem(`${result.uploaded.length} foto(s) adicionada(s)!${avisos.length ? ` ⚠️ ${avisos.join(' · ')}` : ''}`);
       carregar();
     } catch (err) {
       setMensagem('Erro no upload: ' + err.message);
