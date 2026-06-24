@@ -89,6 +89,15 @@ export const api = {
   reprocessarTodos: () => req('/api/fotos/reprocessar-todos', { method: 'POST' }),
   statusReprocessar: () => req('/api/fotos/reprocessar-todos/status'),
 
+  // Banners
+  getBanners: () => req('/api/banners'),
+  getBanner: (id) => req(`/api/banners/${id}`),
+  criarBanner: (nome) => req('/api/banners', { method: 'POST', body: JSON.stringify({ nome }) }),
+  atualizarBanner: (id, body) => req(`/api/banners/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deletarBanner: (id) => req(`/api/banners/${id}`, { method: 'DELETE' }),
+  deletarBannerArquivo: (arquivoId) => req(`/api/banners/arquivo/${arquivoId}`, { method: 'DELETE' }),
+  reordenarBanner: (ordens) => req('/api/banners/ordem', { method: 'PATCH', body: JSON.stringify({ ordens }) }),
+
   // Lançamentos
   getLancamentos: () => req('/api/lancamentos'),
   criarLancamento: (body) => req('/api/lancamentos', { method: 'POST', body: JSON.stringify(body) }),
@@ -112,6 +121,39 @@ export async function uploadFotosFiles(produtoId, variacaoId, files) {
   const headers = {};
   if (_token) headers.Authorization = `Bearer ${_token}`;
   const res = await fetch(`${API_URL}/api/fotos/upload`, { method: 'POST', headers, body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// Baixa o WebP otimizado de uma imagem de banner (dispara o download no sistema)
+export async function baixarBannerArquivo(arquivoId, nomeArquivo) {
+  const headers = {};
+  if (_token) headers.Authorization = `Bearer ${_token}`;
+  const res = await fetch(`${API_URL}/api/banners/arquivo/${arquivoId}/download`, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeArquivo || 'banner.webp';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Upload de imagens de banner (objetos File) para um slot (desktop|mobile|mini)
+export async function uploadBannerFiles(bannerId, tipo, files) {
+  const formData = new FormData();
+  formData.append('tipo', tipo);
+  for (const file of files) {
+    if (file.type && !file.type.startsWith('image/')) continue;
+    formData.append('files', file, file.name);
+  }
+  const headers = {};
+  if (_token) headers.Authorization = `Bearer ${_token}`;
+  const res = await fetch(`${API_URL}/api/banners/${bannerId}/upload`, { method: 'POST', headers, body: formData });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;

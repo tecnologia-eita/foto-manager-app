@@ -1,6 +1,6 @@
 {
   "name": "foto-manager-app",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Gestão de fotos de produtos — Eita Casa Perfeita",
   "author": "Eita Casa Perfeita",
   "main": "src/main.js",
@@ -41,7 +41,7 @@
       "packagerConfig": {
         "name": "Foto Manager",
         "icon": "./assets/icon",
-        "appVersion": "1.0.9",
+        "appVersion": "1.0.10",
         "ignore": [
           "^/nul$",
           "^/assets/nul$",

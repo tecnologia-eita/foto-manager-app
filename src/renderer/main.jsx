@@ -12,6 +12,8 @@ import Produtos from './pages/Produtos';
 import Produto from './pages/Produto';
 import Lancamentos from './pages/Lancamentos';
 import Pendencias from './pages/Pendencias';
+import Banners from './pages/Banners';
+import Banner from './pages/Banner';
 
 function PrivateRoutes() {
   const { token } = useAuth();
@@ -33,6 +35,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                   <Route path="/" element={<Produtos />} />
                   <Route path="/pendencias" element={<Pendencias />} />
                   <Route path="/lancamentos" element={<Lancamentos />} />
+                  <Route path="/banners" element={<Banners />} />
+                  <Route path="/banner/:id" element={<Banner />} />
                   <Route path="/produto/:id" element={<Produto />} />
                 </Route>
               </Route>
