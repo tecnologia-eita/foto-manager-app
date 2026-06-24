@@ -50,24 +50,23 @@ function BannerFoto({ foto, index, onRemover, onBaixar }) {
     zIndex: isDragging ? 999 : 'auto',
   };
   return (
-    <div ref={setNodeRef} style={style} className="group relative rounded-xl overflow-hidden border border-gray-100 checkerboard">
-      {/* Alça de arrastar + número de ordem */}
-      <div
-        {...attributes}
-        {...listeners}
-        title="Arraste para reordenar"
-        className="absolute top-1.5 left-1.5 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-[11px] font-bold rounded-full cursor-grab active:cursor-grabbing transition-colors"
-      >
+    <div ref={setNodeRef} style={style}
+      {...attributes}
+      {...listeners}
+      title="Arraste para reordenar"
+      className="group relative rounded-xl overflow-hidden border border-gray-100 checkerboard cursor-grab active:cursor-grabbing touch-none">
+      {/* Número de ordem (indicador; arrastar funciona em qualquer ponto da imagem) */}
+      <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-[11px] font-bold rounded-full transition-colors">
         <IconGrip />
         <span>{index + 1}</span>
       </div>
 
       <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-        <button onClick={() => onBaixar(foto)} title="Baixar WebP"
+        <button onPointerDown={e => e.stopPropagation()} onClick={() => onBaixar(foto)} title="Baixar WebP"
           className="w-7 h-7 rounded-lg bg-white/90 text-brand-700 hover:bg-white flex items-center justify-center shadow">
           <IconDownload />
         </button>
-        <button onClick={() => onRemover(foto.id)} title="Remover"
+        <button onPointerDown={e => e.stopPropagation()} onClick={() => onRemover(foto.id)} title="Remover"
           className="w-7 h-7 rounded-lg bg-white/90 text-red-600 hover:bg-white flex items-center justify-center shadow">
           <IconTrash />
         </button>
@@ -78,7 +77,7 @@ function BannerFoto({ foto, index, onRemover, onBaixar }) {
         alt={foto.nome_arquivo}
         loading="lazy"
         referrerPolicy="no-referrer"
-        className="w-full h-auto block select-none"
+        className="w-full h-auto block select-none pointer-events-none"
         draggable={false}
       />
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1">

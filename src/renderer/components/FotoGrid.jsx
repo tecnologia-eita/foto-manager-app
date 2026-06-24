@@ -39,13 +39,13 @@ function FotoItem({ foto, onDelete, onView, index }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group shadow-sm"
+      {...attributes}
+      {...listeners}
+      className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group shadow-sm cursor-grab active:cursor-grabbing touch-none"
     >
-      {/* Número de ordem — também é a alça de arrastar (mostra os pontinhos no hover) */}
+      {/* Número de ordem (indicador visual; arrastar funciona em qualquer ponto da foto) */}
       <div
-        {...attributes}
-        {...listeners}
-        className="absolute top-2 left-2 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-xs font-bold rounded-full cursor-grab active:cursor-grabbing transition-colors group-hover:ring-2 group-hover:ring-white/40"
+        className="absolute top-2 left-2 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-xs font-bold rounded-full transition-colors group-hover:ring-2 group-hover:ring-white/40"
         title="Arraste para reordenar"
       >
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -56,6 +56,7 @@ function FotoItem({ foto, onDelete, onView, index }) {
 
       {/* Botão baixar (no topo, ao lado do excluir) */}
       <button
+        onPointerDown={e => e.stopPropagation()}
         onClick={() => window.electronAPI?.downloadUrl?.(foto.drive_url || foto.thumbnail_url, foto.nome_arquivo)}
         className="absolute top-2 right-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/55 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/80"
         title="Baixar foto"
@@ -68,6 +69,7 @@ function FotoItem({ foto, onDelete, onView, index }) {
 
       {/* Botão deletar */}
       <button
+        onPointerDown={e => e.stopPropagation()}
         onClick={() => onDelete(foto.id)}
         className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600"
         title="Remover foto"
@@ -78,11 +80,12 @@ function FotoItem({ foto, onDelete, onView, index }) {
       </button>
 
       {/* Imagem — CDN lh3 (rápido); se falhar, cai para a URL original do Drive. Clique abre o lightbox. */}
-      <div className="aspect-square overflow-hidden bg-gray-50 cursor-zoom-in" onClick={() => onView?.(foto)}>
+      <div className="aspect-square overflow-hidden bg-gray-50" onClick={() => onView?.(foto)}>
         <img
           src={driveImg(foto.drive_file_id || fileIdFromUrl(foto.drive_url), 500) || foto.thumbnail_url || foto.drive_url}
           alt={foto.nome_arquivo}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover pointer-events-none"
+          draggable={false}
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={e => {
@@ -116,7 +119,9 @@ export default function FotoGrid({ fotos, onReorder, onDelete }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    // distância mínima antes de iniciar o arraste — assim um clique simples ainda
+    // abre o lightbox e os botões funcionam; só vira "arrastar" ao mover ~6px
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 

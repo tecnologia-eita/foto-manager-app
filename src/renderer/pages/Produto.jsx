@@ -219,11 +219,16 @@ export default function Produto() {
   }
 
   // Drag-and-drop: usa contador (enter/leave disparam ao passar pelos filhos) p/ não piscar
-  function handleDragEnter(e) { e.preventDefault(); dragCount.current++; if (dragCount.current === 1) setArrastando(true); }
-  function handleDragLeave(e) { e.preventDefault(); dragCount.current = Math.max(0, dragCount.current - 1); if (dragCount.current === 0) setArrastando(false); }
+  // Só reage a arrasto de ARQUIVOS reais (vindos do explorador). Arrastar uma foto
+  // do grid para reordenar não tem 'Files' no dataTransfer — assim não vira upload.
+  const ehArrastoDeArquivos = e => Array.from(e.dataTransfer?.types || []).includes('Files');
+
+  function handleDragEnter(e) { if (!ehArrastoDeArquivos(e)) return; e.preventDefault(); dragCount.current++; if (dragCount.current === 1) setArrastando(true); }
+  function handleDragLeave(e) { if (!arrastando) return; e.preventDefault(); dragCount.current = Math.max(0, dragCount.current - 1); if (dragCount.current === 0) setArrastando(false); }
 
   // Upload por arrastar-e-soltar: lê os File objects direto (sem o file:read do Electron)
   async function handleDrop(e) {
+    if (!ehArrastoDeArquivos(e)) return;
     e.preventDefault();
     dragCount.current = 0;
     setArrastando(false);
