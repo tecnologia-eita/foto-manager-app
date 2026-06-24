@@ -126,7 +126,18 @@ export default function Produtos() {
 
       {/* Grid de produtos */}
       {carregando ? (
-        <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Carregando...</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 18 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+              <div className="aspect-square bg-gray-100 animate-pulse" />
+              <div className="p-2.5 space-y-2">
+                <div className="h-3 w-5/6 bg-gray-200 rounded animate-pulse" />
+                <div className="h-2.5 w-2/5 bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-16 bg-gray-100 rounded-full animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : produtos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">

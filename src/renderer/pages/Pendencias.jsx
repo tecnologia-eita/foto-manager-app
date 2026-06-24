@@ -185,9 +185,39 @@ export default function Pendencias() {
       {msg && <div className={`px-4 py-3 rounded-xl mb-4 text-sm ${msg.tipo === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.txt}</div>}
 
       {!dados && carregando && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[0,1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}
-        </div>
+        <>
+          {/* KPIs skeleton */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-gray-200 animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-6 w-10 bg-gray-200 rounded-md animate-pulse" />
+                  <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100">
+                  <div className="w-8 h-8 rounded-lg bg-gray-200 animate-pulse" />
+                  <div className="h-4 w-44 bg-gray-200 rounded animate-pulse" />
+                </div>
+                <div className="p-4 space-y-3.5">
+                  {[0,1,2,3,4].map(j => (
+                    <div key={j} className="flex items-center justify-between gap-3">
+                      <div className="h-3.5 bg-gray-100 rounded animate-pulse" style={{ width: `${55 - j * 6}%` }} />
+                      <div className="h-3.5 w-12 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {dados && (
