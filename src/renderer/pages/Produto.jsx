@@ -165,7 +165,9 @@ export default function Produto() {
       const cores = (data.variacoes || []).filter(v => v.nome !== 'Principal');
       setVariacoes(cores);
       setFotos(data.fotos || []);
-      setVariacaoSelecionada(prev => (prev === null && cores.length > 0) ? cores[0].id : prev);
+      // mantém a seleção só se ela existir NESTE produto; senão cai na 1ª variação
+      // (corrige fotos sumindo ao navegar de um produto pro outro)
+      setVariacaoSelecionada(prev => cores.some(v => v.id === prev) ? prev : (cores[0]?.id ?? null));
     } catch (err) {
       setMensagem('Erro ao carregar produto: ' + err.message);
     } finally {

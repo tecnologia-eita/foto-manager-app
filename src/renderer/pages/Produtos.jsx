@@ -44,7 +44,7 @@ function ProdutoThumb({ produto }) {
 
 function StatusBadge({ totalFotos, fotosSincronizadas, fotosPendentes }) {
   if (totalFotos === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">Sem fotos</span>;
-  if (fotosPendentes > 0 && fotosSincronizadas === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">No Drive</span>;
+  if (fotosPendentes > 0 && fotosSincronizadas === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">{totalFotos} foto{totalFotos !== 1 ? 's' : ''}</span>;
   if (fotosSincronizadas === totalFotos) return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">Sincronizado</span>;
   return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700">Parcial</span>;
 }
