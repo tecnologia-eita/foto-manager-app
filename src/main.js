@@ -15,14 +15,13 @@ function configurarAutoUpdate() {
   try {
     const { autoUpdater } = require('electron');
     const base = process.env.UPDATE_FEED_URL || 'https://foto-manager-api.tqgmkj.easypanel.host/releases';
+    const status = (s) => { try { mainWindow?.webContents.send('update:status', s); } catch {} };
     autoUpdater.setFeedURL({ url: base });
-    autoUpdater.on('error', err => console.error('[autoUpdate]', err?.message || err));
-    autoUpdater.on('update-available', () => console.log('[autoUpdate] versão nova encontrada, baixando...'));
-    autoUpdater.on('update-not-available', () => console.log('[autoUpdate] já está atualizado'));
-    autoUpdater.on('update-downloaded', () => {
-      console.log('[autoUpdate] atualização baixada — será aplicada no próximo fechamento');
-      if (mainWindow) mainWindow.webContents.send('update:ready');
-    });
+    autoUpdater.on('checking-for-update', () => status({ state: 'checking' }));
+    autoUpdater.on('update-available', () => status({ state: 'downloading' }));
+    autoUpdater.on('update-not-available', () => status({ state: 'none' }));
+    autoUpdater.on('update-downloaded', (_e, _notes, name) => status({ state: 'ready', version: name }));
+    autoUpdater.on('error', err => { console.error('[autoUpdate]', err?.message || err); status({ state: 'error' }); });
     autoUpdater.checkForUpdates();
     setInterval(() => { try { autoUpdater.checkForUpdates(); } catch {} }, 6 * 60 * 60 * 1000); // a cada 6h
   } catch (err) {
@@ -167,3 +166,8 @@ ipcMain.handle('window:toggleMaximize', () => {
 });
 ipcMain.handle('window:close', () => mainWindow?.close());
 ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
+
+// Reinicia e aplica a atualização baixada (Squirrel)
+ipcMain.handle('update:restart', () => {
+  try { require('electron').autoUpdater.quitAndInstall(); } catch (err) { console.error('[autoUpdate] restart', err); }
+});

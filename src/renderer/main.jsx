@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import TitleBar from './components/TitleBar';
 import Layout from './components/Layout';
+import UpdateToast from './components/UpdateToast';
 import Login from './pages/Login';
 import Produtos from './pages/Produtos';
 import Produto from './pages/Produto';
@@ -20,6 +21,7 @@ function PrivateRoutes() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
     <div className="flex flex-col h-screen bg-gray-100">
+      <UpdateToast />
       <TitleBar />
       <div className="flex-1 min-h-0">
         <AuthProvider>

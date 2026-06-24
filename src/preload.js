@@ -15,6 +15,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   downloadUrl: (url, filename) => ipcRenderer.invoke('download:url', url, filename),
 
+  // Atualização do app
+  update: {
+    onStatus: (cb) => {
+      const handler = (_e, s) => cb(s);
+      ipcRenderer.on('update:status', handler);
+      return () => ipcRenderer.removeListener('update:status', handler);
+    },
+    restart: () => ipcRenderer.invoke('update:restart'),
+  },
+
   // Controles da janela (barra de título customizada)
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
