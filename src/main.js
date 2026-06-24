@@ -2,7 +2,33 @@ const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, dialog, safeStorage, Menu } = require('electron');
 
+// Squirrel.Windows: na instalação/atualização/desinstalação ele roda o app com flags
+// especiais (cria/remove atalhos). Esse guard trata isso e sai sem abrir a janela.
+if (require('electron-squirrel-startup')) { app.quit(); }
+
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+// Auto-update (Squirrel.Windows): checa um feed no servidor, baixa em segundo plano
+// e aplica no próximo restart. Só em produção (empacotado) e no Windows.
+function configurarAutoUpdate() {
+  if (isDev || process.platform !== 'win32') return;
+  try {
+    const { autoUpdater } = require('electron');
+    const base = process.env.UPDATE_FEED_URL || 'https://foto-manager-api.tqgmkj.easypanel.host/releases';
+    autoUpdater.setFeedURL({ url: base });
+    autoUpdater.on('error', err => console.error('[autoUpdate]', err?.message || err));
+    autoUpdater.on('update-available', () => console.log('[autoUpdate] versão nova encontrada, baixando...'));
+    autoUpdater.on('update-not-available', () => console.log('[autoUpdate] já está atualizado'));
+    autoUpdater.on('update-downloaded', () => {
+      console.log('[autoUpdate] atualização baixada — será aplicada no próximo fechamento');
+      if (mainWindow) mainWindow.webContents.send('update:ready');
+    });
+    autoUpdater.checkForUpdates();
+    setInterval(() => { try { autoUpdater.checkForUpdates(); } catch {} }, 6 * 60 * 60 * 1000); // a cada 6h
+  } catch (err) {
+    console.error('[autoUpdate] falha ao configurar:', err?.message || err);
+  }
+}
 
 let mainWindow;
 
@@ -39,6 +65,7 @@ function createWindow() {
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   createWindow();
+  configurarAutoUpdate();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
