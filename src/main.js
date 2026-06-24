@@ -8,6 +8,10 @@ if (require('electron-squirrel-startup')) { app.quit(); }
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+// Guarda o último status de atualização para o renderer consultar ao montar
+// (evita perder o evento quando o React ainda não estava ouvindo).
+let lastUpdateStatus = { state: 'none' };
+
 // Auto-update (Squirrel.Windows): checa um feed no servidor, baixa em segundo plano
 // e aplica no próximo restart. Só em produção (empacotado) e no Windows.
 function configurarAutoUpdate() {
@@ -15,7 +19,7 @@ function configurarAutoUpdate() {
   try {
     const { autoUpdater } = require('electron');
     const base = process.env.UPDATE_FEED_URL || 'https://foto-manager-api.tqgmkj.easypanel.host/releases';
-    const status = (s) => { try { mainWindow?.webContents.send('update:status', s); } catch {} };
+    const status = (s) => { lastUpdateStatus = s; try { mainWindow?.webContents.send('update:status', s); } catch {} };
     autoUpdater.setFeedURL({ url: base });
     autoUpdater.on('checking-for-update', () => status({ state: 'checking' }));
     autoUpdater.on('update-available', () => status({ state: 'downloading' }));
@@ -171,3 +175,5 @@ ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
 ipcMain.handle('update:restart', () => {
   try { require('electron').autoUpdater.quitAndInstall(); } catch (err) { console.error('[autoUpdate] restart', err); }
 });
+// Status atual da atualização (renderer consulta ao montar)
+ipcMain.handle('update:getStatus', () => lastUpdateStatus);

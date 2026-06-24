@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener('update:status', handler);
     },
     restart: () => ipcRenderer.invoke('update:restart'),
+    getStatus: () => ipcRenderer.invoke('update:getStatus'),
   },
 
   // Controles da janela (barra de título customizada)

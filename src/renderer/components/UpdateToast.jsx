@@ -6,6 +6,8 @@ export default function UpdateToast() {
   const [status, setStatus] = useState(null); // { state: 'downloading'|'ready'|... , version }
 
   useEffect(() => {
+    // consulta o status atual (caso o update já tenha começado antes do React montar)
+    window.electronAPI?.update?.getStatus?.().then(s => { if (s) setStatus(s); }).catch(() => {});
     const off = window.electronAPI?.update?.onStatus?.(s => setStatus(s));
     return () => { if (typeof off === 'function') off(); };
   }, []);
