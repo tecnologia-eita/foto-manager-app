@@ -264,10 +264,16 @@ export default function Produto() {
     } finally { setCopiando(false); }
   }
 
-  async function handleReorder(oldIndex, newIndex) {
-    const novaOrdem = arrayMove(fotos.filter(f => f.variacao_id === variacaoSelecionada), oldIndex, newIndex);
-    await api.atualizarOrdem(novaOrdem.map((f, i) => ({ id: f.id, ordem: i + 1 }))).catch(console.error);
-    carregar();
+  function handleReorder(oldIndex, newIndex) {
+    const daVariacao = fotos.filter(f => f.variacao_id === variacaoSelecionada);
+    if (oldIndex === newIndex || !daVariacao[oldIndex]) return;
+    const reordenadas = arrayMove(daVariacao, oldIndex, newIndex).map((f, i) => ({ ...f, ordem: i + 1 }));
+    // Atualização otimista: mostra a nova ordem na hora (sem esperar a API nem recarregar)
+    let k = 0;
+    setFotos(prev => prev.map(f => f.variacao_id === variacaoSelecionada ? reordenadas[k++] : f));
+    // Persiste em segundo plano; se falhar, recarrega pra voltar ao estado real
+    api.atualizarOrdem(reordenadas.map(f => ({ id: f.id, ordem: f.ordem })))
+      .catch(err => { console.error(err); carregar(); });
   }
 
   async function handleDelete(fotoId) {
