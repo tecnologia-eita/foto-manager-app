@@ -62,8 +62,8 @@ export const api = {
     return req(`/api/fotos/${produtoId}${qs ? '?' + qs : ''}`);
   },
   atualizarOrdem: (ordens) => req('/api/fotos/ordem', { method: 'PATCH', body: JSON.stringify({ ordens }) }),
-  copiarVariacao: (produto_id, origem_variacao_id, destino_variacao_id) =>
-    req('/api/fotos/copiar-variacao', { method: 'POST', body: JSON.stringify({ produto_id, origem_variacao_id, destino_variacao_id }) }),
+  copiarVariacao: (produto_id, origem_variacao_id, destino_variacao_id, fotos) =>
+    req('/api/fotos/copiar-variacao', { method: 'POST', body: JSON.stringify({ produto_id, origem_variacao_id, destino_variacao_id, fotos }) }),
   deletarFoto: (id) => req(`/api/fotos/${id}`, { method: 'DELETE' }),
 
   // Variações

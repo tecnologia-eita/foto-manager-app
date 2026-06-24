@@ -150,6 +150,8 @@ export default function Produto() {
   const [adicionandoVariacao, setAdicionandoVariacao] = useState(false);
   const [copiarMenu, setCopiarMenu] = useState(false);
   const [copiando, setCopiando] = useState(false);
+  const [copiarPicker, setCopiarPicker] = useState(null);   // { origemId, nome } — seletor de fotos
+  const [copiarSel, setCopiarSel] = useState(() => new Set());
   const [arrastando, setArrastando] = useState(false);
   const dragCount = useRef(0);
   const [importMenu, setImportMenu] = useState(false);
@@ -250,13 +252,25 @@ export default function Produto() {
     } finally { setImportando(false); }
   }
 
-  // Copia as fotos de outra variação para a variação selecionada
-  async function handleCopiarDe(origemId) {
+  // Abre o seletor de fotos da variação de origem (já com todas marcadas)
+  function abrirPickerCopiar(v) {
     setCopiarMenu(false);
-    if (!variacaoSelecionada) return;
+    const fotosOrigem = fotos.filter(f => f.variacao_id === v.id);
+    setCopiarSel(new Set(fotosOrigem.map(f => f.id)));
+    setCopiarPicker({ origemId: v.id, nome: v.nome });
+  }
+  function toggleCopiarFoto(fotoId) {
+    setCopiarSel(prev => { const s = new Set(prev); s.has(fotoId) ? s.delete(fotoId) : s.add(fotoId); return s; });
+  }
+
+  // Copia as fotos ESCOLHIDAS da variação de origem para a selecionada
+  async function confirmarCopiar() {
+    if (!variacaoSelecionada || !copiarPicker || copiarSel.size === 0) return;
+    const origemId = copiarPicker.origemId;
+    setCopiarPicker(null);
     setCopiando(true); setMensagem('');
     try {
-      const r = await api.copiarVariacao(id, origemId, variacaoSelecionada);
+      const r = await api.copiarVariacao(id, origemId, variacaoSelecionada, [...copiarSel]);
       setMensagem(`${r.copiadas} foto(s) copiada(s) para esta variação.`);
       carregar();
     } catch (err) {
@@ -566,12 +580,16 @@ export default function Produto() {
                       </button>
                       {copiarMenu && (
                         <div className="absolute right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44 max-h-60 overflow-y-auto">
-                          {variacoes.filter(v => v.id !== variacaoSelecionada).map(v => (
-                            <button key={v.id} onClick={() => handleCopiarDe(v.id)}
-                              className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 truncate">
-                              {v.nome}
-                            </button>
-                          ))}
+                          {variacoes.filter(v => v.id !== variacaoSelecionada).map(v => {
+                            const n = fotos.filter(f => f.variacao_id === v.id).length;
+                            return (
+                              <button key={v.id} onClick={() => abrirPickerCopiar(v)} disabled={n === 0}
+                                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40 flex items-center justify-between gap-2">
+                                <span className="truncate">{v.nome}</span>
+                                <span className="text-xs text-gray-400 shrink-0">{n}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -666,6 +684,54 @@ export default function Produto() {
           )}
         </div>
       </div>
+
+      {/* Seletor de fotos para copiar de outra variação */}
+      {copiarPicker && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6" onClick={() => setCopiarPicker(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[82vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900">Copiar fotos de "{copiarPicker.nome}"</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Escolha quais fotos copiar para esta variação</p>
+              </div>
+              <button onClick={() => setCopiarPicker(null)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+            </div>
+            <div className="p-4 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {fotos.filter(f => f.variacao_id === copiarPicker.origemId).map(f => {
+                const sel = copiarSel.has(f.id);
+                return (
+                  <button key={f.id} onClick={() => toggleCopiarFoto(f.id)}
+                    className={`relative aspect-square rounded-xl overflow-hidden border-2 transition ${sel ? 'border-brand-500' : 'border-gray-100 hover:border-gray-300'}`}>
+                    <img src={driveImg(f.drive_file_id || fileIdFromUrl(f.drive_url), 300) || f.thumbnail_url || f.drive_url}
+                      className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
+                    {!sel && <div className="absolute inset-0 bg-white/40" />}
+                    <div className={`absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center ${sel ? 'bg-brand-600 text-white' : 'bg-white/80 border border-gray-300 text-transparent'}`}>
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 011.04-.207z" clipRule="evenodd"/></svg>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  const todas = fotos.filter(f => f.variacao_id === copiarPicker.origemId).map(f => f.id);
+                  setCopiarSel(prev => prev.size === todas.length ? new Set() : new Set(todas));
+                }}
+                className="text-xs text-gray-500 hover:text-gray-700">
+                {copiarSel.size === fotos.filter(f => f.variacao_id === copiarPicker.origemId).length ? 'Limpar seleção' : 'Selecionar todas'}
+              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setCopiarPicker(null)} className="px-3 py-2 text-sm text-gray-500 rounded-xl border border-gray-200 hover:bg-gray-50">Cancelar</button>
+                <button onClick={confirmarCopiar} disabled={copiarSel.size === 0}
+                  className="px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium disabled:opacity-50">
+                  Copiar {copiarSel.size}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
