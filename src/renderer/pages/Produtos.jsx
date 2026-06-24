@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, driveImg, fileIdFromUrl } from '../api';
 import { useSyncCtx } from '../components/Layout';
@@ -53,27 +53,37 @@ export default function Produtos() {
   const [produtos, setProdutos] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalVariacoes, setTotalVariacoes] = useState(0);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState('');           // o que está digitado
+  const [buscaDeb, setBuscaDeb] = useState('');     // valor com debounce (dispara a busca)
   const [filtro, setFiltro] = useState('');           // '', sem_fotos, nao_publicado, divergente
   const [pagina, setPagina] = useState(1);
   const [carregando, setCarregando] = useState(false);
   const [statusSync, setStatusSync] = useState(null);
   const navigate = useNavigate();
   const { lastSync } = useSyncCtx();
+  const reqId = useRef(0);
+
+  // Debounce: só busca 300ms depois de parar de digitar (evita 1 request por tecla)
+  useEffect(() => {
+    const t = setTimeout(() => { setBuscaDeb(busca); setPagina(1); }, 300);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   const carregar = useCallback(async () => {
+    const id = ++reqId.current;
     setCarregando(true);
     try {
-      const data = await api.getProdutos({ busca, filtro, pagina, limite: 48 });
+      const data = await api.getProdutos({ busca: buscaDeb, filtro, pagina, limite: 48 });
+      if (id !== reqId.current) return; // resposta velha — ignora (evita flicker/corrida)
       setProdutos(data.produtos);
       setTotal(data.total);
       if (data.total_variacoes) setTotalVariacoes(data.total_variacoes);
     } catch (err) {
       console.error(err);
     } finally {
-      setCarregando(false);
+      if (id === reqId.current) setCarregando(false);
     }
-  }, [busca, filtro, pagina]);
+  }, [buscaDeb, filtro, pagina]);
 
   useEffect(() => { carregar(); }, [carregar]);
   useEffect(() => { if (lastSync) carregar(); }, [lastSync]);
@@ -117,7 +127,7 @@ export default function Produtos() {
           <input
             type="text"
             value={busca}
-            onChange={e => { setBusca(e.target.value); setPagina(1); }}
+            onChange={e => setBusca(e.target.value)}
             placeholder="Buscar por nome ou SKU..."
             className="w-64 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent text-sm placeholder-gray-400"
           />
