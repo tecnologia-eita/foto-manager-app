@@ -43,14 +43,11 @@ function FotoItem({ foto, onDelete, onView, index }) {
       {...listeners}
       className="relative bg-white rounded-xl border border-gray-200 overflow-hidden group shadow-sm cursor-grab active:cursor-grabbing touch-none"
     >
-      {/* Número de ordem (indicador visual; arrastar funciona em qualquer ponto da foto) */}
+      {/* Número de ordem (arrastar funciona em qualquer ponto da foto) */}
       <div
-        className="absolute top-2 left-2 z-10 flex items-center gap-0.5 h-5 pl-0.5 pr-1.5 bg-black/55 group-hover:bg-black/75 text-white text-xs font-bold rounded-full transition-colors group-hover:ring-2 group-hover:ring-white/40"
+        className="absolute top-2 left-2 z-10 flex items-center justify-center w-5 h-5 bg-black/55 group-hover:bg-black/75 text-white text-xs font-bold rounded-full transition-colors"
         title="Arraste para reordenar"
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity">
-          <path d="M9 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 19a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 19a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-        </svg>
         <span>{index + 1}</span>
       </div>
 
