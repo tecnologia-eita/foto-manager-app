@@ -18,7 +18,9 @@ function configurarAutoUpdate() {
   if (isDev || process.platform !== 'win32') return;
   try {
     const { autoUpdater } = require('electron');
-    const base = process.env.UPDATE_FEED_URL || 'https://foto-manager-api.tqgmkj.easypanel.host/releases';
+    // GitHub Releases via update.electronjs.org (CDN rápido). Repo público.
+    const repo = 'tecnologia-eita/foto-manager-app';
+    const base = process.env.UPDATE_FEED_URL || `https://update.electronjs.org/${repo}/win32/${app.getVersion()}`;
     const status = (s) => { lastUpdateStatus = s; try { mainWindow?.webContents.send('update:status', s); } catch {} };
     autoUpdater.setFeedURL({ url: base });
     autoUpdater.on('checking-for-update', () => status({ state: 'checking' }));
