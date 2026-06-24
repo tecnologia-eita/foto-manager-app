@@ -81,8 +81,9 @@ export const api = {
   publicarWbuy: (produtoId, body = {}) => req(`/api/publicar/wbuy/${produtoId}`, { method: 'POST', body: JSON.stringify(body) }),
   publicarAmbos: (produtoId) => req(`/api/publicar/ambos/${produtoId}`, { method: 'POST' }),
 
-  // Importar fotos da Wbuy para o Drive
+  // Importar fotos da Wbuy / Tiny para o Drive
   importarFotosWbuy: (produtoId) => req(`/api/fotos/importar-wbuy/${produtoId}`, { method: 'POST' }),
+  importarFotosTiny: (produtoId) => req(`/api/fotos/importar-tiny/${produtoId}`, { method: 'POST' }),
 
   // Reprocessar fotos antigas (1:1 + 500KB)
   reprocessarTodos: () => req('/api/fotos/reprocessar-todos', { method: 'POST' }),

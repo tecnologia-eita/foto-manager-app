@@ -151,6 +151,7 @@ export default function Produto() {
   const [copiarMenu, setCopiarMenu] = useState(false);
   const [copiando, setCopiando] = useState(false);
   const [arrastando, setArrastando] = useState(false);
+  const [importMenu, setImportMenu] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -226,6 +227,20 @@ export default function Produto() {
     } catch (err) {
       setMensagem('Erro no upload: ' + err.message);
     } finally { setUploadando(false); }
+  }
+
+  // Importa fotos do Tiny ou da Wbuy para o Drive
+  async function importarFotos(origem) {
+    setImportMenu(false);
+    setImportando(true); setMensagem('');
+    try {
+      const r = origem === 'tiny' ? await api.importarFotosTiny(id) : await api.importarFotosWbuy(id);
+      const nome = origem === 'tiny' ? 'Tiny' : 'Wbuy';
+      setMensagem(`${r.importados} foto(s) importadas do ${nome} para o Drive!${r.pulados ? ` (${r.pulados} já existiam)` : ''}${r.erros?.length ? ` · ${r.erros.length} erro(s)` : ''}`);
+      carregar();
+    } catch (err) {
+      setMensagem('Erro ao importar: ' + err.message);
+    } finally { setImportando(false); }
   }
 
   // Copia as fotos de outra variação para a variação selecionada
@@ -418,28 +433,6 @@ export default function Produto() {
         ) : (
           /* Modo produto normal */
           <div className="flex items-center gap-2 shrink-0">
-            {(produto.fotos_wbuy?.length > 0) && (
-              <button
-                onClick={async () => {
-                  if (!confirm(`Importar ${produto.fotos_wbuy.length} foto(s) da Wbuy para o Drive?`)) return;
-                  setImportando(true);
-                  setMensagem('');
-                  try {
-                    const r = await api.importarFotosWbuy(id);
-                    setMensagem(`${r.importados} foto(s) importadas da Wbuy para o Drive!${r.erros?.length ? ` (${r.erros.length} erro(s))` : ''}`);
-                    carregar();
-                  } catch (err) {
-                    setMensagem('Erro ao importar: ' + err.message);
-                  } finally {
-                    setImportando(false);
-                  }
-                }}
-                disabled={importando || !!publicando}
-                className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
-              >
-                {importando ? (<><Spinner /> Importando...</>) : `↓ Wbuy → Drive (${produto.fotos_wbuy.length})`}
-              </button>
-            )}
             <button onClick={() => publicar('tiny')} disabled={!!publicando}
               className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5">
               {publicando === 'tiny' ? (<><Spinner /> Publicando...</>) : 'Publicar no Tiny'}
@@ -570,6 +563,26 @@ export default function Produto() {
                       )}
                     </div>
                   )}
+                  {/* Importar fotos (Tiny ou Wbuy → Drive) */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setImportMenu(m => !m)}
+                      disabled={importando || !!publicando}
+                      className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-xl border border-gray-200 disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {importando ? (<><Spinner /> Importando...</>) : <>↓ Importar fotos</>}
+                    </button>
+                    {importMenu && (
+                      <div className="absolute right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44">
+                        <button onClick={() => importarFotos('wbuy')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                          Da Wbuy {produto.fotos_wbuy?.length ? <span className="text-xs text-gray-400">{produto.fotos_wbuy.length}</span> : null}
+                        </button>
+                        <button onClick={() => importarFotos('tiny')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                          Do Tiny {produto.fotos_tiny?.length ? <span className="text-xs text-gray-400">{produto.fotos_tiny.length}</span> : null}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={handleUpload}
                     disabled={uploadando}
