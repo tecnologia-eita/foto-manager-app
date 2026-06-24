@@ -218,9 +218,9 @@ export default function Pendencias() {
                     <span className="text-sm text-gray-800 truncate block">{p.nome}</span>
                   </button>
                   <span className="text-[11px] shrink-0 flex gap-1">
-                    <span title="Drive" className="px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 font-semibold">D{p.drive}</span>
-                    {p.tem_tiny && <span title="Tiny" className={`px-1.5 py-0.5 rounded font-semibold ${p.drive !== p.tiny ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'}`}>T{p.tiny}</span>}
-                    {p.tem_wbuy && <span title="Wbuy" className={`px-1.5 py-0.5 rounded font-semibold ${p.drive !== p.wbuy ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'}`}>W{p.wbuy}</span>}
+                    <span title="Drive" className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-semibold">D{p.drive}</span>
+                    {p.tem_tiny && <span title="Tiny" className={`px-1.5 py-0.5 rounded font-semibold ${p.drive !== p.tiny ? 'bg-blue-100 text-blue-700' : 'bg-blue-50 text-blue-400'}`}>T{p.tiny}</span>}
+                    {p.tem_wbuy && <span title="Wbuy" className={`px-1.5 py-0.5 rounded font-semibold ${p.drive !== p.wbuy ? 'bg-orange-100 text-orange-700' : 'bg-orange-50 text-orange-400'}`}>W{p.wbuy}</span>}
                   </span>
                   <button onClick={e => igualar(p, e)} disabled={republicando.has(p.id)}
                     title="Igualar Tiny/Wbuy às fotos do Drive"
