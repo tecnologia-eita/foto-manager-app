@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -151,6 +151,7 @@ export default function Produto() {
   const [copiarMenu, setCopiarMenu] = useState(false);
   const [copiando, setCopiando] = useState(false);
   const [arrastando, setArrastando] = useState(false);
+  const dragCount = useRef(0);
   const [importMenu, setImportMenu] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -213,9 +214,14 @@ export default function Produto() {
     }
   }
 
+  // Drag-and-drop: usa contador (enter/leave disparam ao passar pelos filhos) p/ não piscar
+  function handleDragEnter(e) { e.preventDefault(); dragCount.current++; if (dragCount.current === 1) setArrastando(true); }
+  function handleDragLeave(e) { e.preventDefault(); dragCount.current = Math.max(0, dragCount.current - 1); if (dragCount.current === 0) setArrastando(false); }
+
   // Upload por arrastar-e-soltar arquivos direto na grade (Electron expõe file.path)
   async function handleDrop(e) {
     e.preventDefault();
+    dragCount.current = 0;
     setArrastando(false);
     const paths = Array.from(e.dataTransfer.files || []).map(f => f.path).filter(Boolean);
     if (!paths.length) return;
@@ -592,15 +598,20 @@ export default function Produto() {
                   </button>
                 </div>
               </div>
-              {/* Zona de drag-and-drop */}
+              {/* Zona de drag-and-drop: overlay absoluto (pointer-events-none) evita flicker */}
               <div
+                className="relative rounded-2xl"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}
-                onDragOver={e => { e.preventDefault(); if (!arrastando) setArrastando(true); }}
-                onDragLeave={e => { e.preventDefault(); setArrastando(false); }}
-                className={`rounded-2xl transition-colors ${arrastando ? 'ring-2 ring-brand-500 ring-dashed bg-brand-50/50 p-2' : ''}`}
               >
-                {arrastando && <p className="text-center text-sm text-brand-600 py-2">Solte as imagens aqui para enviar</p>}
                 <FotoGrid fotos={fotosVariacao} onReorder={handleReorder} onDelete={handleDelete} />
+                {arrastando && (
+                  <div className="absolute inset-0 z-30 rounded-2xl bg-brand-50/90 ring-2 ring-dashed ring-brand-400 flex items-center justify-center pointer-events-none">
+                    <p className="text-sm font-medium text-brand-600">Solte as imagens aqui para enviar</p>
+                  </div>
+                )}
               </div>
             </>
           )}
