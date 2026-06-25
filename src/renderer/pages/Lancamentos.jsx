@@ -80,10 +80,114 @@ function CardLancamento({ l, onUpdate, onNavigate, onDelete }) {
   );
 }
 
+// Modal: lista todos os produtos do Tiny (mesmo sem Wbuy) para importar como lançamento
+function ModalImportarTiny({ onClose, onImportado }) {
+  const [produtos, setProdutos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [busca, setBusca] = useState('');
+  const [importandoId, setImportandoId] = useState(null);
+  const buscaRef = useRef(null);
+
+  async function carregar(refresh = false) {
+    setCarregando(true); setErro('');
+    try {
+      const data = await api.getTinyProdutos(refresh ? { refresh: '1' } : {});
+      setProdutos(data.produtos || []);
+    } catch (e) { setErro(e.message); }
+    finally { setCarregando(false); }
+  }
+
+  useEffect(() => { carregar(); }, []);
+  useEffect(() => { buscaRef.current?.focus(); }, []);
+
+  const filtro = busca.trim().toLowerCase();
+  const filtrados = (filtro
+    ? produtos.filter(p => p.nome.toLowerCase().includes(filtro) || p.sku.toLowerCase().includes(filtro))
+    : produtos);
+  const visiveis = filtrados.slice(0, 200);
+
+  async function importar(p) {
+    setImportandoId(p.tiny_id);
+    try {
+      const r = await api.importarTinyLancamento(p.tiny_id);
+      onImportado(r);
+    } catch (e) { alert('Erro ao importar: ' + e.message); setImportandoId(null); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900">Importar produto do Tiny</h2>
+            <p className="text-xs text-gray-400">Escolha um produto — ele vira um lançamento com nome, SKU e variações</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M6 6l12 12M18 6L6 18" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+          <input
+            ref={buscaRef}
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar por nome ou SKU..."
+            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-600 text-sm"
+          />
+          <button onClick={() => carregar(true)} disabled={carregando} title="Recarregar do Tiny"
+            className="px-3 py-2 text-xs text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40">
+            ↻ Atualizar
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-2 py-2">
+          {carregando ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400 text-sm gap-2">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin" />
+              Carregando produtos do Tiny… (pode demorar na primeira vez)
+            </div>
+          ) : erro ? (
+            <div className="text-center py-16 text-sm text-red-500">{erro}</div>
+          ) : filtrados.length === 0 ? (
+            <div className="text-center py-16 text-sm text-gray-400">Nenhum produto encontrado.</div>
+          ) : (
+            <>
+              {visiveis.map(p => (
+                <div key={p.tiny_id} className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 truncate" title={p.nome}>{p.nome}</p>
+                    <p className="text-[11px] font-mono text-gray-400">{p.sku || 'sem SKU'}{p.tipo === 'V' ? ' · com variações' : ''}</p>
+                  </div>
+                  {p.ja_lancamento && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">já importado</span>}
+                  <button
+                    onClick={() => importar(p)}
+                    disabled={!!importandoId}
+                    className="text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 px-3 py-1.5 rounded-lg disabled:opacity-40 shrink-0"
+                  >
+                    {importandoId === p.tiny_id ? 'Importando…' : 'Importar'}
+                  </button>
+                </div>
+              ))}
+              {filtrados.length > visiveis.length && (
+                <p className="text-center text-[11px] text-gray-400 py-3">
+                  Mostrando {visiveis.length} de {filtrados.length}. Refine a busca para ver mais.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Lancamentos() {
   const [lancamentos, setLancamentos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [criando, setCriando] = useState(false);
+  const [importarTiny, setImportarTiny] = useState(false);
   const [novoNome, setNovoNome] = useState('');
   const [novoSku, setNovoSku] = useState('');
   const [salvandoNovo, setSalvandoNovo] = useState(false);
@@ -146,16 +250,38 @@ export default function Lancamentos() {
             {lancamentos.length} produto(s) em preparação
           </p>
         </div>
-        <button
-          onClick={() => setCriando(v => !v)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-            <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clipRule="evenodd"/>
-          </svg>
-          Novo lançamento
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImportarTiny(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path fillRule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clipRule="evenodd"/>
+            </svg>
+            Importar do Tiny
+          </button>
+          <button
+            onClick={() => setCriando(v => !v)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clipRule="evenodd"/>
+            </svg>
+            Novo lançamento
+          </button>
+        </div>
       </div>
+
+      {importarTiny && (
+        <ModalImportarTiny
+          onClose={() => setImportarTiny(false)}
+          onImportado={(r) => {
+            setImportarTiny(false);
+            if (r.ja_no_catalogo) alert('Esse produto já está no catálogo (tem Wbuy) — abrindo direto, sem criar lançamento.');
+            navigate(`/produto/${r.id}`);
+          }}
+        />
+      )}
 
       {/* Formulário de criação */}
       {criando && (

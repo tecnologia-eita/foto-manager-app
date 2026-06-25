@@ -100,6 +100,11 @@ export const api = {
 
   // Lançamentos
   getLancamentos: () => req('/api/lancamentos'),
+  getTinyProdutos: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return req(`/api/lancamentos/tiny-produtos${qs ? '?' + qs : ''}`);
+  },
+  importarTinyLancamento: (tiny_id) => req('/api/lancamentos/importar-tiny', { method: 'POST', body: JSON.stringify({ tiny_id }) }),
   criarLancamento: (body) => req('/api/lancamentos', { method: 'POST', body: JSON.stringify(body) }),
   atualizarLancamento: (id, body) => req(`/api/lancamentos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   publicarLancamentoTiny: (id) => req(`/api/lancamentos/${id}/publicar-tiny`, { method: 'POST' }),
