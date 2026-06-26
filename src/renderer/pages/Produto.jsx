@@ -7,7 +7,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl } from '../api';
+import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl, apiUrl, getToken } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
@@ -48,6 +48,87 @@ function urlComparativo(u) {
   const fid = fileIdFromUrl(url);
   if (fid) return { src: driveImg(fid, 400), dl: driveImg(fid, 1600) };
   return { src: url, dl: url };
+}
+
+// Vídeo do produto: arquivo guardado no Drive. Baixa do YouTube (Wbuy) na máquina do
+// usuário via Electron (IP residencial não é bloqueado), ou upload de arquivo.
+function VideoBox({ produtoId }) {
+  const [video, setVideo] = useState(null);
+  const [youtubeUrl, setYoutubeUrl] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [trabalhando, setTrabalhando] = useState(false);
+  const [status, setStatus] = useState('');
+  const temElectron = !!window.electronAPI?.video;
+
+  async function carregar() {
+    setCarregando(true);
+    try { const v = await api.getVideo(produtoId); setVideo(v.video || null); } catch {}
+    setCarregando(false);
+    api.getWbuyVideo(produtoId).then(r => setYoutubeUrl(r.youtube_url || null)).catch(() => {});
+  }
+  useEffect(() => { carregar(); }, [produtoId]);
+  useEffect(() => window.electronAPI?.video?.onStatus?.(setStatus), []);
+
+  async function importarWbuy() {
+    if (!youtubeUrl) return;
+    setTrabalhando(true);
+    try {
+      const r = await window.electronAPI.video.importarYoutube({ produtoId, youtubeUrl, apiUrl, token: getToken() });
+      if (r?.video) setVideo(r.video);
+    } catch (e) { alert('Erro ao importar do YouTube: ' + e.message); }
+    finally { setTrabalhando(false); setStatus(''); }
+  }
+  async function adicionar() {
+    setTrabalhando(true);
+    try {
+      const r = await window.electronAPI.video.selecionarEUpload({ produtoId, apiUrl, token: getToken() });
+      if (r?.video) setVideo(r.video);
+    } catch (e) { alert('Erro ao enviar vídeo: ' + e.message); }
+    finally { setTrabalhando(false); setStatus(''); }
+  }
+  async function remover() {
+    if (!confirm('Remover o vídeo do produto?')) return;
+    try { await api.deletarVideo(produtoId); setVideo(null); } catch (e) { alert(e.message); }
+  }
+  const mb = b => b ? (b / 1024 / 1024).toFixed(1) + ' MB' : '';
+
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100">
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">Vídeo do produto</h3>
+      {trabalhando ? (
+        <div className="text-xs text-gray-500 px-1 py-3 flex items-center gap-2">
+          <span className="w-3.5 h-3.5 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin inline-block shrink-0" />
+          <span className="truncate">{status || 'Processando…'}</span>
+        </div>
+      ) : carregando ? (
+        <div className="h-9 bg-gray-100 rounded-lg animate-pulse" />
+      ) : video ? (
+        <div className="bg-gray-50 rounded-xl p-2.5">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-brand-500 shrink-0"><path d="M4.5 5.25A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H4.5zM19.5 8.25l2.69-1.61a.75.75 0 011.06.68v9.36a.75.75 0 01-1.06.68L19.5 15.75v-7.5z"/></svg>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-gray-700 truncate" title={video.video_nome}>{video.video_nome}</p>
+              <p className="text-[10px] text-gray-400">{video.video_origem === 'youtube' ? 'do YouTube' : 'arquivo'}{video.video_tamanho_bytes ? ' · ' + mb(Number(video.video_tamanho_bytes)) : ''}</p>
+            </div>
+          </div>
+          <div className="flex gap-1.5 mt-2">
+            <button onClick={() => window.electronAPI?.openExternal?.(video.video_url)} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Abrir</button>
+            {temElectron && <button onClick={adicionar} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Trocar</button>}
+            <button onClick={remover} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-red-50 text-red-500">Remover</button>
+          </div>
+        </div>
+      ) : !temElectron ? (
+        <p className="text-[11px] text-gray-400 px-1">Disponível no app instalado.</p>
+      ) : (
+        <div className="space-y-1.5">
+          <button onClick={adicionar} className="w-full text-xs py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium">+ Adicionar vídeo</button>
+          {youtubeUrl && (
+            <button onClick={importarWbuy} className="w-full text-xs py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium">↓ Importar do Wbuy (YouTube)</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ComparativoColuna({ titulo, fotos = [], cor }) {
@@ -557,6 +638,8 @@ export default function Produto() {
           {variacoes.length === 0 && (
             <p className="text-xs text-gray-400 py-3 px-1">Nenhuma variação. Clique em + para adicionar.</p>
           )}
+
+          <VideoBox produtoId={id} />
         </div>
 
         {/* Main */}

@@ -15,6 +15,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   downloadUrl: (url, filename) => ipcRenderer.invoke('download:url', url, filename),
 
+  // Vídeo do produto (baixa do YouTube na máquina + envia pro backend)
+  video: {
+    importarYoutube: (args) => ipcRenderer.invoke('video:importarYoutube', args),
+    selecionarEUpload: (args) => ipcRenderer.invoke('video:selecionarEUpload', args),
+    onStatus: (cb) => {
+      const handler = (_e, m) => cb(m);
+      ipcRenderer.on('video:status', handler);
+      return () => ipcRenderer.removeListener('video:status', handler);
+    },
+  },
+
   // Atualização do app
   update: {
     onStatus: (cb) => {

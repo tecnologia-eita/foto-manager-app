@@ -1,5 +1,6 @@
 // URL da API — em produção aponta para fotos.autoeita.space
 const API_URL = import.meta.env.VITE_API_URL || 'https://foto-manager-api.tqgmkj.easypanel.host';
+export const apiUrl = API_URL; // exposto para os IPC do Electron (upload de vídeo)
 
 let _token = null;
 
@@ -88,6 +89,11 @@ export const api = {
   // Reprocessar fotos antigas (1:1 + 500KB)
   reprocessarTodos: () => req('/api/fotos/reprocessar-todos', { method: 'POST' }),
   statusReprocessar: () => req('/api/fotos/reprocessar-todos/status'),
+
+  // Vídeo do produto
+  getVideo: (produtoId) => req(`/api/video/${produtoId}`),
+  getWbuyVideo: (produtoId) => req(`/api/video/${produtoId}/wbuy-video`),
+  deletarVideo: (produtoId) => req(`/api/video/${produtoId}`, { method: 'DELETE' }),
 
   // Banners
   getBanners: () => req('/api/banners'),
