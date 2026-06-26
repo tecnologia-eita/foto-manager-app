@@ -205,20 +205,35 @@ async function enviarVideoBackend({ apiUrl, token, produtoId, filePath, nome, or
   return data;
 }
 
+// Extrai o ID do vídeo de qualquer forma de URL do YouTube (embed/watch/youtu.be)
+function youtubeId(url) {
+  const m = String(url || '').match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 // Baixa um vídeo do YouTube e envia pro backend
 ipcMain.handle('video:importarYoutube', async (event, { produtoId, youtubeUrl, apiUrl, token }) => {
   const { execFile } = require('child_process');
   const send = (m) => { try { mainWindow?.webContents.send('video:status', m); } catch {} };
   try {
     const ytdlp = await ensureYtDlp(send);
+    const id = youtubeId(youtubeUrl);
+    const url = id ? `https://www.youtube.com/watch?v=${id}` : youtubeUrl; // watch é mais confiável que embed
     const out = path.join(app.getPath('temp'), `fm-video-${Date.now()}.mp4`);
     send('Baixando o vídeo do YouTube…');
     await new Promise((resolve, reject) => {
       // formato progressivo (áudio+vídeo num arquivo só) → não precisa de ffmpeg
       execFile(ytdlp, ['-f', 'best[ext=mp4][acodec!=none][vcodec!=none]/best[ext=mp4]/best',
-        '--no-playlist', '--no-warnings', '-o', out, youtubeUrl],
+        '--no-playlist', '--no-warnings', '-o', out, url],
         { timeout: 300000, maxBuffer: 20 * 1024 * 1024 }, (err, so, se) => {
-          if (err) return reject(new Error((se || err.message || '').split('\n').filter(Boolean).slice(-2).join(' ').slice(0, 200)));
+          if (err) {
+            const raw = (se || err.message || '');
+            let msg = raw.split('\n').filter(l => /ERROR/i.test(l)).slice(-1)[0] || raw.split('\n').filter(Boolean).slice(-1)[0] || 'falha no download';
+            if (/not available|DRM|unavailable|private|format is not available/i.test(raw)) {
+              msg = 'Esse vídeo do YouTube está indisponível/restrito para download. Use "Adicionar vídeo" e envie o arquivo.';
+            }
+            return reject(new Error(msg.replace(/^ERROR:\s*/i, '').slice(0, 220)));
+          }
           resolve();
         });
     });
