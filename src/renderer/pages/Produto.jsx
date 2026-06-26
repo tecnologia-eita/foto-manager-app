@@ -40,6 +40,16 @@ function nomeDaUrl(url) {
   } catch { return ''; }
 }
 
+// Normaliza uma URL de foto do comparativo (Tiny/Wbuy): se for do Google Drive
+// (uc?export=view / /d/), usa o CDN lh3 (confiável); senão mantém a URL original
+// (ex.: CDN da Wbuy, S3 do Tiny). Evita thumbnails em branco do drive.google.com/uc.
+function urlComparativo(u) {
+  const url = typeof u === 'string' ? u : (u?.foto || u?.url || '');
+  const fid = fileIdFromUrl(url);
+  if (fid) return { src: driveImg(fid, 400), dl: driveImg(fid, 1600) };
+  return { src: url, dl: url };
+}
+
 function ComparativoColuna({ titulo, fotos = [], cor }) {
   return (
     <div className={`flex-1 rounded-2xl p-3 ${cor}`}>
@@ -701,12 +711,12 @@ export default function Produto() {
                 />
                 <ComparativoColuna
                   titulo={`Tiny (${comparativo.tiny?.length || 0})`}
-                  fotos={comparativo.tiny}
+                  fotos={comparativo.tiny?.map(u => urlComparativo(u))}
                   cor="bg-gray-50"
                 />
                 <ComparativoColuna
                   titulo={`Wbuy (${comparativo.wbuy?.length || 0})`}
-                  fotos={comparativo.wbuy}
+                  fotos={comparativo.wbuy?.map(u => urlComparativo(u))}
                   cor="bg-gray-50"
                 />
               </div>
