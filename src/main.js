@@ -162,35 +162,7 @@ ipcMain.handle('download:url', (event, url, filename) => {
   mainWindow.webContents.downloadURL(url);
 });
 
-// ===== VÍDEO: baixa do YouTube na máquina do usuário (IP residencial não é bloqueado)
-// e envia o arquivo pro backend → Drive. O yt-dlp.exe é baixado sob demanda (não embute no app).
-const https = require('https');
-
-function baixarHttps(url, destPath, redirects = 0) {
-  return new Promise((resolve, reject) => {
-    if (redirects > 6) return reject(new Error('muitos redirects'));
-    const file = fs.createWriteStream(destPath);
-    https.get(url, { headers: { 'User-Agent': 'FotoManager' } }, (resp) => {
-      if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
-        file.close(); fs.unlink(destPath, () => {});
-        return resolve(baixarHttps(resp.headers.location, destPath, redirects + 1));
-      }
-      if (resp.statusCode !== 200) { file.close(); fs.unlink(destPath, () => {}); return reject(new Error('HTTP ' + resp.statusCode)); }
-      resp.pipe(file);
-      file.on('finish', () => file.close(() => resolve(destPath)));
-    }).on('error', (e) => { fs.unlink(destPath, () => {}); reject(e); });
-  });
-}
-
-const YTDLP_PATH = path.join(app.getPath('userData'), 'bin', 'yt-dlp.exe');
-async function ensureYtDlp(onStatus) {
-  try { if (fs.existsSync(YTDLP_PATH) && fs.statSync(YTDLP_PATH).size > 1_000_000) return YTDLP_PATH; } catch {}
-  fs.mkdirSync(path.dirname(YTDLP_PATH), { recursive: true });
-  onStatus?.('Preparando o baixador de vídeo (primeira vez)…');
-  await baixarHttps('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe', YTDLP_PATH);
-  return YTDLP_PATH;
-}
-
+// ===== VÍDEO: upload do arquivo de vídeo (escolhido pelo usuário) → backend → Drive.
 async function enviarVideoBackend({ apiUrl, token, produtoId, filePath, nome, origem }) {
   const buf = fs.readFileSync(filePath);
   const fd = new FormData();
@@ -204,46 +176,6 @@ async function enviarVideoBackend({ apiUrl, token, produtoId, filePath, nome, or
   if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
   return data;
 }
-
-// Extrai o ID do vídeo de qualquer forma de URL do YouTube (embed/watch/youtu.be)
-function youtubeId(url) {
-  const m = String(url || '').match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-
-// Baixa um vídeo do YouTube e envia pro backend
-ipcMain.handle('video:importarYoutube', async (event, { produtoId, youtubeUrl, apiUrl, token }) => {
-  const { execFile } = require('child_process');
-  const send = (m) => { try { mainWindow?.webContents.send('video:status', m); } catch {} };
-  try {
-    const ytdlp = await ensureYtDlp(send);
-    const id = youtubeId(youtubeUrl);
-    const url = id ? `https://www.youtube.com/watch?v=${id}` : youtubeUrl; // watch é mais confiável que embed
-    const out = path.join(app.getPath('temp'), `fm-video-${Date.now()}.mp4`);
-    send('Baixando o vídeo do YouTube…');
-    await new Promise((resolve, reject) => {
-      // formato progressivo (áudio+vídeo num arquivo só) → não precisa de ffmpeg
-      execFile(ytdlp, ['-f', 'best[ext=mp4][acodec!=none][vcodec!=none]/best[ext=mp4]/best',
-        '--no-playlist', '--no-warnings', '-o', out, url],
-        { timeout: 300000, maxBuffer: 20 * 1024 * 1024 }, (err, so, se) => {
-          if (err) {
-            const raw = (se || err.message || '');
-            let msg = raw.split('\n').filter(l => /ERROR/i.test(l)).slice(-1)[0] || raw.split('\n').filter(Boolean).slice(-1)[0] || 'falha no download';
-            if (/not available|DRM|unavailable|private|format is not available/i.test(raw)) {
-              msg = 'Esse vídeo do YouTube está indisponível/restrito para download. Use "Adicionar vídeo" e envie o arquivo.';
-            }
-            return reject(new Error(msg.replace(/^ERROR:\s*/i, '').slice(0, 220)));
-          }
-          resolve();
-        });
-    });
-    send('Enviando o vídeo pro Drive…');
-    const data = await enviarVideoBackend({ apiUrl, token, produtoId, filePath: out, nome: 'video-youtube.mp4', origem: 'youtube' });
-    fs.unlink(out, () => {});
-    send('');
-    return data;
-  } catch (e) { send(''); throw e; }
-});
 
 // Seleciona um arquivo de vídeo do disco e envia pro backend
 ipcMain.handle('video:selecionarEUpload', async (event, { produtoId, apiUrl, token }) => {

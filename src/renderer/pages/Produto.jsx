@@ -50,39 +50,52 @@ function urlComparativo(u) {
   return { src: url, dl: url };
 }
 
-// Vídeo do produto: arquivo guardado no Drive. Baixa do YouTube (Wbuy) na máquina do
-// usuário via Electron (IP residencial não é bloqueado), ou upload de arquivo.
+// Player do vídeo dentro do app (usa o player embed do Drive — toca e tem seek)
+function VideoPlayerModal({ fileId, nome, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-6" onClick={onClose}>
+      <div className="bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 shrink-0">
+          <span className="text-sm text-white/80 truncate">{nome || 'Vídeo'}</span>
+          <button onClick={onClose} className="text-white/60 hover:text-white text-lg leading-none px-1">✕</button>
+        </div>
+        {/* vídeo vertical (mobile) — 9:16, altura limitada pela viewport */}
+        <div className="h-[80vh] aspect-[9/16] bg-black">
+          <iframe
+            src={`https://drive.google.com/file/d/${fileId}/preview`}
+            className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen frameBorder="0"
+            title={nome || 'video'}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Vídeo do produto: arquivo guardado no Drive. Upload de arquivo + preview que toca no app.
 function VideoBox({ produtoId }) {
   const [video, setVideo] = useState(null);
-  const [youtubeUrl, setYoutubeUrl] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [trabalhando, setTrabalhando] = useState(false);
   const [status, setStatus] = useState('');
+  const [player, setPlayer] = useState(false);
+  const [posterErro, setPosterErro] = useState(false);
   const temElectron = !!window.electronAPI?.video;
 
   async function carregar() {
     setCarregando(true);
     try { const v = await api.getVideo(produtoId); setVideo(v.video || null); } catch {}
+    setPosterErro(false);
     setCarregando(false);
-    api.getWbuyVideo(produtoId).then(r => setYoutubeUrl(r.youtube_url || null)).catch(() => {});
   }
   useEffect(() => { carregar(); }, [produtoId]);
   useEffect(() => window.electronAPI?.video?.onStatus?.(setStatus), []);
 
-  async function importarWbuy() {
-    if (!youtubeUrl) return;
-    setTrabalhando(true);
-    try {
-      const r = await window.electronAPI.video.importarYoutube({ produtoId, youtubeUrl, apiUrl, token: getToken() });
-      if (r?.video) setVideo(r.video);
-    } catch (e) { alert('Erro ao importar do YouTube: ' + e.message); }
-    finally { setTrabalhando(false); setStatus(''); }
-  }
   async function adicionar() {
     setTrabalhando(true);
     try {
       const r = await window.electronAPI.video.selecionarEUpload({ produtoId, apiUrl, token: getToken() });
-      if (r?.video) setVideo(r.video);
+      if (r?.video) { setVideo(r.video); setPosterErro(false); }
     } catch (e) { alert('Erro ao enviar vídeo: ' + e.message); }
     finally { setTrabalhando(false); setStatus(''); }
   }
@@ -101,31 +114,36 @@ function VideoBox({ produtoId }) {
           <span className="truncate">{status || 'Processando…'}</span>
         </div>
       ) : carregando ? (
-        <div className="h-9 bg-gray-100 rounded-lg animate-pulse" />
+        <div className="aspect-video bg-gray-100 rounded-xl animate-pulse" />
       ) : video ? (
-        <div className="bg-gray-50 rounded-xl p-2.5">
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-brand-500 shrink-0"><path d="M4.5 5.25A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H4.5zM19.5 8.25l2.69-1.61a.75.75 0 011.06.68v9.36a.75.75 0 01-1.06.68L19.5 15.75v-7.5z"/></svg>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-700 truncate" title={video.video_nome}>{video.video_nome}</p>
-              <p className="text-[10px] text-gray-400">{video.video_origem === 'youtube' ? 'do YouTube' : 'arquivo'}{video.video_tamanho_bytes ? ' · ' + mb(Number(video.video_tamanho_bytes)) : ''}</p>
+        <div>
+          {/* Preview clicável → abre o player no app (vídeo vertical/mobile) */}
+          <button onClick={() => setPlayer(true)} className="relative block w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-900 group">
+            {!posterErro ? (
+              <img src={driveImg(video.video_file_id, 480)} onError={() => setPosterErro(true)} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
+            )}
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="w-11 h-11 rounded-full bg-black/55 group-hover:bg-black/70 flex items-center justify-center transition">
+                <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 ml-0.5"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+            </span>
+          </button>
+          <p className="text-xs text-gray-700 truncate mt-1.5 px-0.5" title={video.video_nome}>{video.video_nome}</p>
+          <p className="text-[10px] text-gray-400 px-0.5">{video.video_origem === 'youtube' ? 'do YouTube' : 'arquivo'}{video.video_tamanho_bytes ? ' · ' + mb(Number(video.video_tamanho_bytes)) : ''}</p>
+          {temElectron && (
+            <div className="flex gap-1.5 mt-2">
+              <button onClick={adicionar} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Trocar</button>
+              <button onClick={remover} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-red-50 text-red-500">Remover</button>
             </div>
-          </div>
-          <div className="flex gap-1.5 mt-2">
-            <button onClick={() => window.electronAPI?.openExternal?.(video.video_url)} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Abrir</button>
-            {temElectron && <button onClick={adicionar} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Trocar</button>}
-            <button onClick={remover} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-red-50 text-red-500">Remover</button>
-          </div>
+          )}
+          {player && <VideoPlayerModal fileId={video.video_file_id} nome={video.video_nome} onClose={() => setPlayer(false)} />}
         </div>
       ) : !temElectron ? (
         <p className="text-[11px] text-gray-400 px-1">Disponível no app instalado.</p>
       ) : (
-        <div className="space-y-1.5">
-          <button onClick={adicionar} className="w-full text-xs py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium">+ Adicionar vídeo</button>
-          {youtubeUrl && (
-            <button onClick={importarWbuy} className="w-full text-xs py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium">↓ Importar do Wbuy (YouTube)</button>
-          )}
-        </div>
+        <button onClick={adicionar} className="w-full text-xs py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium">+ Adicionar vídeo</button>
       )}
     </div>
   );
