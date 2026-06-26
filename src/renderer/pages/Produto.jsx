@@ -346,12 +346,13 @@ export default function Produto() {
       else if (destino === 'wbuy') result = await api.publicarWbuy(id, variacaoSelecionada ? { variacao_id: variacaoSelecionada } : {});
       else result = await api.publicarAmbos(id);
 
+      const aviso = ' — pode levar até ~1 min pra as imagens aparecerem no painel (Tiny/Wbuy processam em segundo plano).';
       if (destino === 'ambos') {
         const tiny = result.resultados.tiny?.ok ? '✓ Tiny' : '✗ Tiny';
         const wbuy = result.resultados.wbuy?.ok ? '✓ Wbuy' : '✗ Wbuy';
-        setMensagem(`Publicação concluída: ${tiny}, ${wbuy}`);
+        setMensagem(`Publicação concluída: ${tiny}, ${wbuy}${aviso}`);
       } else {
-        setMensagem(`Publicado na ${destino === 'tiny' ? 'Tiny' : 'Wbuy'} com sucesso! ${result.fotosPublicadas} foto(s).`);
+        setMensagem(`Publicado na ${destino === 'tiny' ? 'Tiny' : 'Wbuy'} com sucesso! ${result.fotosPublicadas} foto(s).${aviso}`);
       }
       carregar();
     } catch (err) {
