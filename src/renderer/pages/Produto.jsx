@@ -587,6 +587,20 @@ export default function Produto() {
         ) : (
           /* Modo produto normal */
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={async () => {
+                try {
+                  const r = await api.criarShare(id);
+                  try { await navigator.clipboard.writeText(r.url); } catch {}
+                  setMensagem('🔗 Link copiado! Cole pra compartilhar (só ver e baixar): ' + r.url);
+                } catch (e) { setMensagem('Erro ao gerar link: ' + e.message); }
+              }}
+              disabled={!!publicando}
+              title="Gerar link público (ver e baixar as fotos, sem login)"
+              className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+              Compartilhar
+            </button>
             <button onClick={() => publicar('tiny')} disabled={!!publicando}
               className="px-3 py-1.5 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5">
               {publicando === 'tiny' ? (<><Spinner /> Publicando...</>) : 'Publicar no Tiny'}

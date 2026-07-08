@@ -91,6 +91,7 @@ export const api = {
   statusReprocessar: () => req('/api/fotos/reprocessar-todos/status'),
 
   // Vídeo do produto
+  criarShare: (produtoId) => req('/share/create', { method: 'POST', body: JSON.stringify({ produto_id: produtoId }) }),
   getVideo: (produtoId) => req(`/api/video/${produtoId}`),
   getWbuyVideo: (produtoId) => req(`/api/video/${produtoId}/wbuy-video`),
   deletarVideo: (produtoId) => req(`/api/video/${produtoId}`, { method: 'DELETE' }),
