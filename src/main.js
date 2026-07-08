@@ -18,9 +18,11 @@ function configurarAutoUpdate() {
   if (isDev || process.platform !== 'win32') return;
   try {
     const { autoUpdater } = require('electron');
-    // GitHub Releases via update.electronjs.org (CDN rápido). Repo público.
+    // Feed direto no GitHub Releases (releases/latest/download): sempre serve a ÚLTIMA
+    // versão, SEM cache. Antes usávamos update.electronjs.org, mas o cache dele atrasava
+    // e o app ficava sem atualizar pra última. Repo público. CDN do GitHub é rápido.
     const repo = 'tecnologia-eita/foto-manager-app';
-    const base = process.env.UPDATE_FEED_URL || `https://update.electronjs.org/${repo}/win32/${app.getVersion()}`;
+    const base = process.env.UPDATE_FEED_URL || `https://github.com/${repo}/releases/latest/download`;
     const status = (s) => { lastUpdateStatus = s; try { mainWindow?.webContents.send('update:status', s); } catch {} };
     autoUpdater.setFeedURL({ url: base });
     autoUpdater.on('checking-for-update', () => status({ state: 'checking' }));
