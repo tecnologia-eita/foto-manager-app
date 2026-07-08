@@ -7,7 +7,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl, apiUrl, getToken } from '../api';
+import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl, apiUrl, getToken, baixarVideoProduto } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
@@ -103,6 +103,10 @@ function VideoBox({ produtoId }) {
     if (!confirm('Remover o vídeo do produto?')) return;
     try { await api.deletarVideo(produtoId); setVideo(null); } catch (e) { alert(e.message); }
   }
+  async function baixar() {
+    try { await baixarVideoProduto(produtoId, video?.video_nome); }
+    catch (e) { alert('Erro ao baixar: ' + e.message); }
+  }
   const mb = b => b ? (b / 1024 / 1024).toFixed(1) + ' MB' : '';
 
   return (
@@ -132,12 +136,18 @@ function VideoBox({ produtoId }) {
           </button>
           <p className="text-xs text-gray-700 truncate mt-1.5 px-0.5" title={video.video_nome}>{video.video_nome}</p>
           <p className="text-[10px] text-gray-400 px-0.5">{video.video_origem === 'youtube' ? 'do YouTube' : 'arquivo'}{video.video_tamanho_bytes ? ' · ' + mb(Number(video.video_tamanho_bytes)) : ''}</p>
-          {temElectron && (
-            <div className="flex gap-1.5 mt-2">
-              <button onClick={adicionar} className="flex-1 text-[11px] py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Trocar</button>
-              <button onClick={remover} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-red-50 text-red-500">Remover</button>
-            </div>
-          )}
+          <div className="flex gap-1.5 mt-2">
+            <button onClick={baixar} className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1 rounded-lg bg-brand-50 border border-brand-100 hover:bg-brand-100 text-brand-700">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clipRule="evenodd"/></svg>
+              Baixar
+            </button>
+            {temElectron && (
+              <>
+                <button onClick={adicionar} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-600">Trocar</button>
+                <button onClick={remover} className="text-[11px] px-2 py-1 rounded-lg bg-white border border-gray-200 hover:bg-red-50 text-red-500">Remover</button>
+              </>
+            )}
+          </div>
           {player && <VideoPlayerModal fileId={video.video_file_id} nome={video.video_nome} onClose={() => setPlayer(false)} />}
         </div>
       ) : !temElectron ? (

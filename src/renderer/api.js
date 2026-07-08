@@ -118,6 +118,23 @@ export const api = {
   concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 
+// Baixa o arquivo de vídeo salvo de um produto (dispara o download no sistema)
+export async function baixarVideoProduto(produtoId, nomeArquivo) {
+  const headers = {};
+  if (_token) headers.Authorization = `Bearer ${_token}`;
+  const res = await fetch(`${API_URL}/api/video/${produtoId}/download`, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeArquivo || 'video.mp4';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
+}
+
 // Upload de objetos File (ex.: drag-and-drop) — lê os bytes direto no renderer,
 // sem passar pelo file:read do Electron (que só autoriza arquivos do seletor nativo).
 export async function uploadFotosFiles(produtoId, variacaoId, files) {
