@@ -7,7 +7,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl, apiUrl, getToken, baixarVideoProduto } from '../api';
+import { api, uploadFotos, uploadFotosFiles, driveImg, fileIdFromUrl, apiUrl, getToken, baixarVideoProduto, baixarZipProduto } from '../api';
 
 import FotoGrid from '../components/FotoGrid';
 
@@ -257,6 +257,7 @@ export default function Produto() {
   const [carregandoComparativo, setCarregandoComparativo] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [uploadando, setUploadando] = useState(false);
+  const [baixandoZip, setBaixandoZip] = useState(false);
   const [publicando, setPublicando] = useState('');
   const [tinyPublicado, setTinyPublicado] = useState(false);
   const [wbuyPublicado, setWbuyPublicado] = useState(false);
@@ -733,6 +734,20 @@ export default function Produto() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Baixar todas as fotos do produto num único ZIP */}
+                  <button
+                    onClick={async () => {
+                      setBaixandoZip(true);
+                      try { await baixarZipProduto(id, produto?.sku || produto?.nome); }
+                      catch (e) { setMensagem('Erro ao baixar: ' + e.message); }
+                      finally { setBaixandoZip(false); }
+                    }}
+                    disabled={baixandoZip || (fotos?.length || 0) === 0}
+                    title="Baixar todas as fotos do produto num único arquivo (.zip)"
+                    className="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-xl border border-gray-200 disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {baixandoZip ? (<><Spinner /> Zipando...</>) : <>↓ Baixar todas</>}
+                  </button>
                   {/* Copiar fotos de outra variação */}
                   {variacaoSelecionada && variacoes.filter(v => v.id !== variacaoSelecionada).length > 0 && (
                     <div className="relative">

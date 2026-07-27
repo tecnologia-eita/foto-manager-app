@@ -119,6 +119,21 @@ export const api = {
   concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 
+// Baixa TODAS as fotos do produto num único ZIP
+export async function baixarZipProduto(produtoId, nomeBase) {
+  const headers = {};
+  if (_token) headers.Authorization = `Bearer ${_token}`;
+  const res = await fetch(`${API_URL}/api/fotos/${produtoId}/zip`, { headers });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${nomeBase || 'produto'}-fotos.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 // Baixa o arquivo de vídeo salvo de um produto (dispara o download no sistema)
 export async function baixarVideoProduto(produtoId, nomeArquivo) {
   const headers = {};
