@@ -116,7 +116,10 @@ export const api = {
   atualizarLancamento: (id, body) => req(`/api/lancamentos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   publicarLancamentoTiny: (id) => req(`/api/lancamentos/${id}/publicar-tiny`, { method: 'POST' }),
   publicarLancamentoWbuy: (id) => req(`/api/lancamentos/${id}/publicar-wbuy`, { method: 'POST' }),
-  concluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
+  // Concluir: o lançamento vira produto do catálogo e as fotos ficam no Drive
+  // (rota de 14/10/2026). Excluir apaga tudo, e só vale para o que nunca foi publicado.
+  concluirLancamento: (id) => req(`/api/lancamentos/${id}/concluir`, { method: 'POST' }),
+  excluirLancamento: (id) => req(`/api/lancamentos/${id}`, { method: 'DELETE' }),
 };
 
 // Baixa TODAS as fotos do produto num único ZIP

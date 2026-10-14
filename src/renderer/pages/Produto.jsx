@@ -569,7 +569,7 @@ export default function Produto() {
 
             <button
               onClick={async () => {
-                if (!confirm('Confirma conclusão? O lançamento será removido desta aba.')) return;
+                if (!confirm('Concluir o lançamento? Ele sai desta aba e vai para o catálogo; as fotos continuam no Drive.')) return;
                 setConcluindo(true);
                 try {
                   await api.concluirLancamento(id);
